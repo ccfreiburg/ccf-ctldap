@@ -4,6 +4,7 @@ sites:
     user: username  // User needs rights to the api in CT
     password: secret
     url: https://sitename.church.tools/
+    
     selectionGroupIds:  // ChurchTools Group Ids - only members of these groups will be served by ldap
       - gid 
       - gid

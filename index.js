@@ -2,6 +2,9 @@ const path = require("path");
 const ldap = require("ldapjs");
 const YAML = require('yamljs')
 const log = require('./src/logging')
+const transform = require('./src/transform')
+const ctservice = require('./src/ctservice')
+const ldapcache = require('./src/ldapcache')
 const c = require('./src/constants')
 
 log.loglevel = log.loglevels.debug
@@ -10,24 +13,47 @@ log.info("Starting up CCF Ldap wrapper for ChurchTools ....")
 const config = YAML.load(c.CONFIG_FILE);
 log.debug(JSON.stringify(config))
 
-var rootobj = {
-  dn: "dc=ccfreiburg,dc=de",
-  attributes: {
-    createtimestamp: "20200406114647Z",
-    creatorsname: "cn=admin,dc=ccfreiburg,dc=de",
-    dc: "ccfreiburg",
-    entrycsn: "20200406114647.018289Z#000000#000#000000",
-    entrydn: "dc=ccfreiburg,dc=de",
-    entryuuid: "0a0f7af6-0c48-103a-873b-5963809e173f",
-    hassubordinates: true,
-    modifiersname: "cn=admin,dc=ccfreiburg,dc=de",
-    modifytimestamp: "20200406114647Z",
-    o: "Calvary Chapel Freiburg",
-    objectclass: ["top", "organization"],
-    structuralobjectclass: "organization",
-    subschemasubentry: "cn=Subschema",
-  },
-};
+
+
+{
+  dn: site.compatTransform(site.fnUserDn({ cn: cn })),
+    attributes: {
+    cn: cn,
+      displayname: "Admin",
+        id: 0,
+          uid: "Admin",
+            bbbrole: "admin",
+              entryUUID: ,
+    givenname: "Administrator",
+      objectclass: [c.LDAP_OBJCLASS_USER, "simpleSecurityObject", "organizationalRole"],
+    }
+
+
+  for (var site in config.sites) {
+    const siteCacheFunctions = ldapcache.init(site.name, transform.getRootObj(site.ldap.dn, site.ldap.admin, site.ldap.o))
+    const siteTramsforms = transform.getSiteTransforms(site)
+
+    const configGroupIds = site.selectionGroupIds.map((id) => id)
+    const ctPersonIds = await ctservice.getPersonsInGroups(configGroupIds, site.site)
+
+    site.tranformedGroups.forEach(element => {
+      if (!configGroupIds.includes(element.gid))
+        configGroupIds.push(element.guid)
+    });
+    const ctGroups = await ctservice.getGroups(configGroupIds, site.site)
+
+    const ctPersons = []
+    for await (const id of ctPersonIds) {
+      ctPersons.push(
+        await ctservice.getPersonRecordForId(id, site.site)
+      )
+    }
+    const ctGroupMembership = ctservice.getGroupMemberships(configGroupIds, site.site)
+
+    siteTramsforms
+
+  }
+
 
 // LdapCache.init( Root Object )
 // LdapCache.addGroups( transform( read ) )

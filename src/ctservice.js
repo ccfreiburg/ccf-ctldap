@@ -3,18 +3,51 @@ const c = require("./constants");
 const t = require("./transform");
 const ctconn = require("./ctconnection");
 
-exports.getPersonsInGroups = async (groupIds, site) => {
+gettehgroups = async (groupIds, site) => {
   var url = site.url + c.API_SLUG + c.GROUPMEMBERS_AP
   groupIds.forEach(id => {
     url = url + c.IDS + id
   });
-  const result = await ctconn.get(url, site)
+  return await ctconn.get(url, site)
+}
+exports.getPersonsInGroups = async (groupIds, site) => {
+  const result = await gettehgroups(groupIds, site)
   const personIds = []
   result.data.forEach((el) => {
     if (!personIds.includes(el.personId))
       personIds.push(el.personId)
   })
   return personIds
+}
+
+exports.getGroupMemberships = async (groupIds, site) => {
+  const result = await gettehgroups(groupIds, site)
+  const members = []
+  result.data.forEach((el) => {
+    members.push({
+      personId: el.personId,
+      groupId: el.groupId
+    })
+  })
+  return members
+}
+
+
+exports.getGroups = async (groupIds, site) => {
+  var url = site.url + c.API_SLUG + c.GROUPS_AP
+  groupIds.forEach(id => {
+    url = url + c.IDS + id
+  });
+  const result = await ctconn.get(url, site)
+  const groups = []
+  result.data.forEach((el) => {
+    groups.push({
+      id: el.id,
+      guid: el.guid,
+      name: el.name
+    })
+  })
+  return groups
 }
 
 exports.getUid = (data) => {
