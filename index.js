@@ -1,23 +1,9 @@
 var fs = require("fs");
-var ini = require("ini");
 var path = require("path");
 
-exports.config = ini.parse(
-  fs.readFileSync(path.resolve(__dirname, "ctcaldap.config"), "utf-8")
-);
-
 const ldap = require("ldapjs");
-const server = ldap.createServer();
 
-server.search("o=example", (req, res, next) => {
-  const obj = {
-    dn: req.dn.toString(),
-    attributes: {
-      objectclass: ["organization", "top"],
-      o: "example",
-    },
-  };
-});
+console.log("Starting up CCF Ldap wrapper for ChurchTools ....")
 
 var rootobj = {
   dn: "dc=ccfreiburg,dc=de",
@@ -38,42 +24,53 @@ var rootobj = {
   },
 };
 
-server.search("o=example", (req, res, next) => {
-  const obj = {
-    dn: "o=example",
-    attributes: {
-      objectclass: ["organization", "top", "dcObject"],
-      o: "example",
-      hasSubordinates: true,
-    },
-  };
-  if (req.filter.matches(obj.attributes)) res.send(obj);
-  res.end();
-});
-server.search("oc=top, cn=Subschema", (req, res, next) => {
-  const obj = {
-    dn: "oc=top, cn=Subschema",
-    attributes: {
-      parentTo: "all",
-    },
-  };
-  if (req.filter.matches(obj.attributes)) res.send(obj);
-  res.end();
-});
+// const server = ldap.createServer();
 
-server.search("", (req, res) => {
-  obj = rootobj;
-  if (req.filter.matches(obj.attributes)) res.send(obj);
-  res.end();
-});
+// server.search("o=example", (req, res, next) => {
+//   const obj = {
+//     dn: req.dn.toString(),
+//     attributes: {
+//       objectclass: ["organization", "top"],
+//       o: "example",
+//     },
+//   };
+// });
+// server.search("o=example", (req, res, next) => {
+//   const obj = {
+//     dn: "o=example",
+//     attributes: {
+//       objectclass: ["organization", "top", "dcObject"],
+//       o: "example",
+//       hasSubordinates: true,
+//     },
+//   };
+//   if (req.filter.matches(obj.attributes)) res.send(obj);
+//   res.end();
+// });
+// server.search("oc=top, cn=Subschema", (req, res, next) => {
+//   const obj = {
+//     dn: "oc=top, cn=Subschema",
+//     attributes: {
+//       parentTo: "all",
+//     },
+//   };
+//   if (req.filter.matches(obj.attributes)) res.send(obj);
+//   res.end();
+// });
 
-server.listen(1389, () => {
-  console.log("LDAP server listening at %s", server.url);
-});
+// server.search("", (req, res) => {
+//   obj = rootobj;
+//   if (req.filter.matches(obj.attributes)) res.send(obj);
+//   res.end();
+// });
 
-if (this.config.sites) {
-  Object.keys(this.config.sites).map((sitename) => {
-    var site = config.sites[sitename];
-    console.log(site + " Setting site config");
-  });
-}
+// server.listen(1389, () => {
+//   console.log("LDAP server listening at %s", server.url);
+// });
+
+// if (this.config.sites) {
+//   Object.keys(this.config.sites).map((sitename) => {
+//     var site = config.sites[sitename];
+//     console.log(site + " Setting site config");
+//   });
+// }

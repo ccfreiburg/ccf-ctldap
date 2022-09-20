@@ -25,17 +25,13 @@
   "homepage": "https://github.com/AlexRoehm/ctcaldap#readme",
   "devDependencies": {
     "chai": "^4.3.4",
+    "chai-as-promised": "^7.1.1",
     "mocha": "^8.3.2"
   },
   "dependencies": {
     "axios": "^0.21.4",
-    "chai-as-promised": "^7.1.1",
-    "dotenv": "^16.0.2",
-    "extend": "^3.0.2",
-    "ini": "^2.0.0",
     "ldap-escape": "^2.0.5",
     "ldapjs": "^2.3.1",
-    "nyc": "^15.1.0",
     "path": "^0.12.7"
   }
 }

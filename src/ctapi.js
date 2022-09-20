@@ -1,6 +1,5 @@
 const log = require("./logging");
 const c = require("./constants");
-const extend = require("extend");
 const axios = require("axios").default;
 
 
