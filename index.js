@@ -29,6 +29,11 @@ var rootobj = {
   },
 };
 
+// LdapCache.init( Root Object )
+// LdapCache.addGroups( transform( read ) )
+// LdapCache.addPersons( transform( read ) )
+
+
 // const server = ldap.createServer();
 
 // server.search("o=example", (req, res, next) => {
