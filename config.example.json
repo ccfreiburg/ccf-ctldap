@@ -1,0 +1,13 @@
+{
+  "name": "sitename",
+  "user": "",
+  "password": "",
+  "url": "https://sitename.church.tools/",
+  "selectionGroupIds": [],
+  "tranformedGroups": [
+    {
+      "gid": 0,
+      "name": "Group Name"
+    }
+  ]
+}
