@@ -1,5 +1,4 @@
-const chai = require("chai");
-const expect = chai.expect;
+const { expect } = require("chai");
 const transform = require("../src/transform.js");
 //const userMockData = require("./data/getUsersData.json");
 

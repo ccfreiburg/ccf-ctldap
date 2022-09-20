@@ -6,14 +6,10 @@ class DataFormatError extends Error {
     this.name = "DataFormatError";
   }
 }
-
 exports.lowercase = (s) => (typeof s === "string" ? s.toLowerCase() : s);
-
 exports.identity = (s) => s;
-
 exports.getCompatStringFunc = (isLowercase) =>
   isLowercase ? this.lowercase : this.identity;
-
 exports.uniqueEmails = (users) => {
   var mails = {};
   return users.filter((user) => {
@@ -25,7 +21,6 @@ exports.uniqueEmails = (users) => {
     return result;
   });
 };
-
 exports.stringConvLowercaseUmlaut = (str) => {
   return str
     .toLowerCase()

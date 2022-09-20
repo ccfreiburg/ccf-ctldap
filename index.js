@@ -1,9 +1,14 @@
-var fs = require("fs");
-var path = require("path");
-
+const path = require("path");
 const ldap = require("ldapjs");
+const YAML = require('yamljs')
+const log = require('./src/logging')
+const c = require('./src/constants')
 
-console.log("Starting up CCF Ldap wrapper for ChurchTools ....")
+log.loglevel = log.loglevels.debug
+
+log.info("Starting up CCF Ldap wrapper for ChurchTools ....")
+const config = YAML.load(c.CONFIG_FILE);
+log.debug(JSON.stringify(config))
 
 var rootobj = {
   dn: "dc=ccfreiburg,dc=de",

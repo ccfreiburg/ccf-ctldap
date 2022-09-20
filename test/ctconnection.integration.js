@@ -1,16 +1,18 @@
+const ctconn = require("../src/ctconnection");
+const log = require("../src/logging");
+
 const chai = require("chai");
-const expect = chai.expect;
 var chaiAsPromised = require("chai-as-promised");
+const expect = chai.expect;
 chai.use(chaiAsPromised);
 
-const log = require("../src/logging");
-const ctconn = require("../src/ctconnection");
 ChurchToolsError = ctconn.ChurchToolsError;
 
-const site = require("../config.json")
+const site = require('../config.json')
 
-before(() => log.loglevel = log.loglevels.quiet)
-
+before(() => {
+  log.loglevel = log.loglevels.quiet
+})
 
 describe("Simlpe API call integration works", () => {
   it("Info: gets info object", async () => {

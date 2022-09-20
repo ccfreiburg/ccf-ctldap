@@ -1,0 +1,15 @@
+sites:
+  ccf:
+    name: sitename 
+    user: username  // User needs rights to the api in CT
+    password: secret
+    url: https://sitename.church.tools/
+    selectionGroupIds:  // ChurchTools Group Ids - only members of these groups will be served by ldap
+      - gid 
+      - gid
+    tranformedGroups:   // ChurchTools Group Ids with the group name which will be served by Ldap
+      - gid: gid
+        name: Groupname
+      - gid: gid
+        name: Groupname
+// further ChurchTools sites to serve - following the same schema above

@@ -1,15 +1,13 @@
 const ctserv = require("../src/ctservice");
-const chai = require("chai");
-const expect = chai.expect;
-var chaiAsPromised = require("chai-as-promised");
-chai.use(chaiAsPromised);
+const { expect } = require("chai");
 
 const log = require("../src/logging");
+const site = require('../config.json')
+
 before(() => log.loglevel = log.loglevels.quiet)
 
 
 describe("CT API calls from service", () => {
-  const site = require("../config.json");
   it("Selection Group returns the group info and personIds", async () => {
     const personIds = await ctserv.getPersonsInGroups(site.selectionGroupIds, site);
     expect(personIds.length).to.be.above(15)

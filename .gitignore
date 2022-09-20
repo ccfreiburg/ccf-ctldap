@@ -30,3 +30,4 @@ jspm_packages/
 
 # secret configuration
 config.json
+config.yml

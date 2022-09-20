@@ -1,28 +1,14 @@
 {
-  "name": "ctcaldap",
+  "name": "ccf-ctldap",
   "version": "1.0.0",
-  "description": "ChurchTools LDAP Proxy",
+  "description": "ChurchTools LDAP Proxy for CCF",
   "main": "index.js",
   "scripts": {
     "test": "mocha ./test/*.test.js",
     "integration": "mocha ./test/*.integration.js"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/AlexRoehm/ctcaldap.git"
-  },
-  "keywords": [
-    "ChurchTools",
-    "LDAP",
-    "Migration",
-    "NextCloud"
-  ],
   "author": "Alex Röhm",
   "license": "GPL-3.0-or-later",
-  "bugs": {
-    "url": "https://github.com/AlexRoehm/ctcaldap/issues"
-  },
-  "homepage": "https://github.com/AlexRoehm/ctcaldap#readme",
   "devDependencies": {
     "chai": "^4.3.4",
     "chai-as-promised": "^7.1.1",
@@ -32,6 +18,7 @@
     "axios": "^0.21.4",
     "ldap-escape": "^2.0.5",
     "ldapjs": "^2.3.1",
-    "path": "^0.12.7"
+    "path": "^0.12.7",
+    "yamljs": "^0.3.0"
   }
 }
