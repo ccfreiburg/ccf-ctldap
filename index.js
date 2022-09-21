@@ -15,44 +15,47 @@ log.debug(JSON.stringify(config))
 
 
 
+  // dn: site.compatTransform(site.fnUserDn({ cn: cn })),
+  //   attributes: {
+  //   cn: cn,
+  //     displayname: "Admin",
+  //       id: 0,
+  //         uid: "Admin",
+  //           bbbrole: "admin",
+  //             entryUUID: ,
+  //   givenname: "Administrator",
+  //     objectclass: [c.LDAP_OBJCLASS_USER, "simpleSecurityObject", "organizationalRole"],
+  //   }
+
+const updateCache = (site, siteCacheFunctions) =>
 {
-  dn: site.compatTransform(site.fnUserDn({ cn: cn })),
-    attributes: {
-    cn: cn,
-      displayname: "Admin",
-        id: 0,
-          uid: "Admin",
-            bbbrole: "admin",
-              entryUUID: ,
-    givenname: "Administrator",
-      objectclass: [c.LDAP_OBJCLASS_USER, "simpleSecurityObject", "organizationalRole"],
-    }
-
-
-  for (var site in config.sites) {
-    const siteCacheFunctions = ldapcache.init(site.name, transform.getRootObj(site.ldap.dn, site.ldap.admin, site.ldap.o))
     const siteTramsforms = transform.getSiteTransforms(site)
 
-    const configGroupIds = site.selectionGroupIds.map((id) => id)
-    const ctPersonIds = await ctservice.getPersonsInGroups(configGroupIds, site.site)
+    const churchtoolsdata = ctservice.getChurchToolsData(site)
+    const groups = siteTramsforms.getLdapGroupsWithoutMembers()
+    const persons = siteTramsforms.getLdapUser()
+    siteTramsforms.addMembersToGroups(groups, persons)
 
-    site.tranformedGroups.forEach(element => {
-      if (!configGroupIds.includes(element.gid))
-        configGroupIds.push(element.guid)
-    });
-    const ctGroups = await ctservice.getGroups(configGroupIds, site.site)
+    ldapcache.update(site.name, persons, groups)
+}
 
-    const ctPersons = []
-    for await (const id of ctPersonIds) {
-      ctPersons.push(
-        await ctservice.getPersonRecordForId(id, site.site)
-      )
-    }
-    const ctGroupMembership = ctservice.getGroupMemberships(configGroupIds, site.site)
+const initCahce = (site) => {
+  const siteCacheFunctions = ldapcache.init(site.name, transform.getRootObj(site.ldap.dn, site.ldap.admin, site.ldap.o))
+  updateCache(site, siteCacheFunctions)
+  // Todo implement an update strategy
+}
 
-    siteTramsforms
+const updateLdapServerData = (siteldap) => {
 
-  }
+}
+
+const startLdapServer = (siteldap) => {
+  updateLdapServerData(siteldap)
+}
+
+for (var site in config.sites) {
+  initCahce(site)
+}
 
 
 // LdapCache.init( Root Object )
