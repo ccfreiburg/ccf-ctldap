@@ -8,7 +8,7 @@ chai.use(chaiAsPromised);
 
 ChurchToolsError = ctconn.ChurchToolsError;
 
-const site = require('../config.json')
+const {site} = require('../config.json')
 
 before(() => {
   log.loglevel = log.loglevels.quiet
@@ -35,7 +35,7 @@ describe("Simlpe API call integration works", () => {
   });
 
   it("loginPromise: login works with real church tools access", async () => {
-    con = ctconn.getEmptyConnection(site.sitename);
+    con = ctconn.getEmptyConnection(site.name);
     con.baseurl = site.url;
     const result = await ctconn.loginPromiseReal(con, site.user, site.password)
     expect(result.status).to.be.equal("success");

@@ -133,6 +133,7 @@ exports.getPromiseReal = async (url, site) => {
         },
         json: true,
       }
+      log.debug(JSON.stringify(reqest))
       result = await axios(reqest)
       return ctapi.result(result)
     } catch (err) {

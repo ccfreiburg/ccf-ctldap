@@ -31,7 +31,13 @@ const updateCache = (site, siteCacheFunctions) =>
 {
     const siteTramsforms = transform.getSiteTransforms(site)
 
-    const churchtoolsdata = ctservice.getChurchToolsData(site)
+    const allGoupsIds = site.selectionGroupIds.map((id) => id);
+    site.tranformedGroups.forEach((element) => {
+      if (!allGoupsIds.includes(element.gid))
+      allGoupsIds.push(element.gid);
+    });
+  
+    const churchtoolsdata = ctservice.getChurchToolsData(selectionGroupIds, allGoupsIds, site)
     const groups = siteTramsforms.getLdapGroupsWithoutMembers()
     const persons = siteTramsforms.getLdapUser()
     siteTramsforms.addMembersToGroups(groups, persons)
