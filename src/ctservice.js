@@ -52,12 +52,6 @@ exports.getGroups = async (groupIds, site) => {
   return groups;
 };
 
-exports.getUid = (data) => {
-  if (data[c.LDAPID_FIELD] && data[c.LDAPID_FIELD].length > 0)
-    return data[c.LDAPID_FIELD];
-  return t.stringConvLowercaseUmlaut(data.firstName + '.' + data.lastName);
-};
-
 getPersonRecord = (data) => {
   var person = {
     id: data.id,
@@ -70,10 +64,9 @@ getPersonRecord = (data) => {
     phonePrivate: data.phonePrivate,
     zip: data.zip,
     city: data.city,
-    cmsuserid: data.cmsUserId ? data.cmsUserId : this.getUid(data),
+    cmsuserid: (data.cmsUserId ? data.cmsUserId : ""),
     email: data.email,
   };
-  person[c.LDAPID_FIELD] = this.getUid(data);
   return person;
 }
 

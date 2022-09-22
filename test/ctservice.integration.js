@@ -2,7 +2,7 @@ const ctserv = require("../src/ctservice");
 const { expect } = require("chai");
 
 const log = require("../src/logging");
-const site = require('../config.json')
+const site = require('../production/config.json')
 
 before(() => log.loglevel = log.loglevels.quiet)
 
@@ -24,7 +24,7 @@ describe("CT API calls from service", () => {
     expect(person.id).to.be.equal(3)
     expect(person.ncuid).to.be.equal("samuel.garrard")
   })
-  it.only("getChurchToolsData - returns all the data", async () => {
+  it("getChurchToolsData - returns all the data", async () => {
     const data = await ctserv.getChurchToolsData(
       site.selectionGroupIds, 
       site.tranformedGroups.map((v)=>v.gid),

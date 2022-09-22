@@ -8,7 +8,7 @@ chai.use(chaiAsPromised);
 
 ChurchToolsError = ctconn.ChurchToolsError;
 
-const {site} = require('../config.json')
+const {site} = require('../production/config.json')
 
 before(() => {
   log.loglevel = log.loglevels.quiet

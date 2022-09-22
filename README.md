@@ -18,3 +18,12 @@ Node.js is required to run this software. http://nodejs.org/
 
 Get and install node, clone the repo and run `npm install` (`yarn`) to install dependancies. After that you can run the tests by `npm run test` (`yarn test`) or the cli by `node . `
 
+## not implemented
+cmsuserid
+Grouptype 
+lowercase settings
+  dn_lower_case immer true // site.dn_lower_case || ((site.dn_lower_case === undefined) && config.dn_lower_case)
+  email_lower_case immer true, // || ((site.email_lower_case === undefined) && config.email_lower_case)
+?
+  emails_unique: false, //|| ((site.emails_unique === undefined) && config.emails_unique)
+

@@ -12,8 +12,8 @@ ChurchToolsFatalError = ctapi.ChurchToolsFatalError;
 const site = {
   name: "nopf",
   user: "user",
-  pass: "pass",
-  url: "https://nopf.church.tools/",
+  password: "pass",
+  url: "https://nopf.church.toys/",
 };
 
 before(() => log.loglevel = log.loglevels.quiet)

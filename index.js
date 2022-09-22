@@ -27,49 +27,40 @@ log.debug(JSON.stringify(config))
   //     objectclass: [c.LDAP_OBJCLASS_USER, "simpleSecurityObject", "organizationalRole"],
   //   }
 
-const updateCache = (site, siteCacheFunctions) =>
-{
-    const siteTramsforms = transform.getSiteTransforms(site)
 
-    const allGoupsIds = site.selectionGroupIds.map((id) => id);
-    site.tranformedGroups.forEach((element) => {
-      if (!allGoupsIds.includes(element.gid))
+const initCache = (site) => {
+  const siteCacheFunctions = ldapcache.init(
+    site.name, 
+    transform.getRootObj(site.ldap.dc, site.ldap.admin, site.ldap.o),
+    transform.getAdmin()
+    )
+
+  const allGoupsIds = site.selectionGroupIds.map((id) => id);
+  site.tranformedGroups.forEach((element) => {
+  if (!allGoupsIds.includes(element.gid))
       allGoupsIds.push(element.gid);
-    });
+  });
+  const churchtoolsdata = ctservice.getChurchToolsData(site.selectionGroupIds, allGoupsIds, site.site)
+
+  const {users,groups} = getLdapDataFromChurchTools(site, churchtoolsdata)
   
-    const churchtoolsdata = ctservice.getChurchToolsData(selectionGroupIds, allGoupsIds, site)
-    const groups = siteTramsforms.getLdapGroupsWithoutMembers()
-    const persons = siteTramsforms.getLdapUser()
-    siteTramsforms.addMembersToGroups(groups, persons)
-
-    ldapcache.update(site.name, persons, groups)
-}
-
-const initCahce = (site) => {
-  const siteCacheFunctions = ldapcache.init(site.name, transform.getRootObj(site.ldap.dn, site.ldap.admin, site.ldap.o))
-  updateCache(site, siteCacheFunctions)
+  siteCacheFunctions.addData(users,groups)
   // Todo implement an update strategy
+  return siteCacheFunctions
 }
 
 const updateLdapServerData = (siteldap) => {
-
 }
 
 const startLdapServer = (siteldap) => {
   updateLdapServerData(siteldap)
 }
 
+
 for (var site in config.sites) {
-  initCahce(site)
+  site.cache_functions = initCache(site)
 }
 
-
-// LdapCache.init( Root Object )
-// LdapCache.addGroups( transform( read ) )
-// LdapCache.addPersons( transform( read ) )
-
-
-// const server = ldap.createServer();
 
 // server.search("o=example", (req, res, next) => {
 //   const obj = {
