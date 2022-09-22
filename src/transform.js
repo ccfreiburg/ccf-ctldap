@@ -43,7 +43,7 @@ exports.getRootObj = (dc, admin, o) => {
       entrydn: dn,
       entryuuid: transform.generateUUID(),
       o: o,
-      objectclass: ['top', 'organization'],
+      objectclass: ['top', "RootDSE", 'organization'],
       structuralobjectclass: 'organization',
       subschemasubentry: 'cn=Subschema',
     },

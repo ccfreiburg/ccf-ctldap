@@ -83,22 +83,30 @@ exports.getCsrfTokenReal = async (baseurl, cookie) => {
   return await ctapi.request(request)
 };
 
-
 getCookie = (result) => {
   return result.headers["set-cookie"][0];
 };
 
-const loginfunc = async (conn, user, password) => {
-  conn.csrfToken = "";
-  const request = {
+getLoginRequest = (baseurl, user, password) => {
+  return {
     method: "post",
-    url: conn.baseurl + c.API_SLUG + c.LOGIN_AP,
+    url: baseurl + c.API_SLUG + c.LOGIN_AP,
     data: {
       "username": user,
       "rememberMe": false,
       "password": password
     }
   }
+}
+
+exports.authenticate = async ( baseurl, user, password ) => {
+  const { data } = await ctapi.request(getLoginRequest( baseurl, user, password ))
+  return (data.status == "success");
+}
+
+const loginfunc = async (conn, user, password) => {
+  conn.csrfToken = "";
+  const request = getLoginRequest(conn.baseurl, user, password)
   const successfunc = (result) => {
     conn.cookie = getCookie(result);
   }
