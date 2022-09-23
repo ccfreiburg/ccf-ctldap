@@ -1,37 +1,38 @@
 var ldap = require('ldapjs');
 const c = require('./constants');
-const log = require('./loggig');
+const log = require('./logging');
 
-var ldapjs = undefined;
+log.loglevel = log.loglevels.debug
 
 exports.getLdapServer = (server) => {
   if (server.crt && server.key) {
-    log.info('LDAP Server starting with ssl');
     var ldapCert = fs.readFileSync(server.crt, { encoding: 'utf8' });
     var ldapKey = fs.readFileSync(server.key, { encoding: 'utf8' });
     ldapjs = ldap.createServer({ certificate: ldapCert, key: ldapKey });
+    log.info('LDAP Server started with ssl');
   } else {
-    log.info('LDAP Server starting without security (no ssl)');
     ldapjs = ldap.createServer();
+    log.info('LDAP Server started without security (no ssl)');
   }
   return {
-    initSite: (site, cacheFunctions) => initSite(site, cacheFunctions, ldapjs),
+    initSite: (sitename, cacheFunctions) => initSite(sitename, cacheFunctions, ldapjs),
     startUp: () => startUp(server, ldapjs),
-  };
-};
+    getConnections: (cb) => ldapjs.getConnections(cb),
+    stopServer: () => ldapjs.close()
+  }
+}
 
 initSite = (sitename, cacheFunctions, ldapjs) => {
-  
   function authorize(req, _res, next) {
-    const adminDn = cacheFunctions.getGlobls().adminDn.dn;
-    if (!req.connection.ldap.bindDN.equals(adminDn)) {
+    const adminDn = cacheFunctions.getGlobals().adminDn.dn;
+    if (!req.connection.ldap.bindDN.equals(adminDn.dn)) {
       log.warnSite(sitename, 'Rejected search without proper binding!');
       return next(new ldap.InsufficientAccessRightsError());
     }
     return next();
   }
 
-  function logSearchRequest(req, _res, next) {
+  function searchLogging(req, _res, next) {
     log.debugSite(
       sitename,
       'SEARCH base object: ' + req.dn.toString() + ' scope: ' + req.scope
@@ -97,12 +98,11 @@ initSite = (sitename, cacheFunctions, ldapjs) => {
     return next();
   };
 
+  log.debugSite(sitename,"Resgistering routes")
   // Login bind for user
   ldapjs.bind(
     'ou=' + c.LDAP_OU_USERS + ',o=' + sitename,
-    function (req, _res, next) {
-      next();
-    },
+    searchLogging,
     authenticate,
     endSuccess
   );
@@ -156,7 +156,7 @@ initSite = (sitename, cacheFunctions, ldapjs) => {
     function (req, res) {
       log.debug('Get subschema information');
       console.log(JSON.stringify(req));
-      res.send(cacheFunctions.getGlobls().schemaDn);
+      res.send(cacheFunctions.getGlobals().schemaDn);
       res.end();
     },
     endSuccess
@@ -166,17 +166,14 @@ initSite = (sitename, cacheFunctions, ldapjs) => {
   ldapjs.search(
     '',
     function (req, res) {
-      logDebug(
-        { sitename: req.dn.o },
-        'empty request, return directory information'
-      );
-      if (req.filter.matches(obj.attributes))
-        res.send(cacheFunctions.getGlobls().rootDn);
+      log.debug('empty request, return directory information');
+      res.send(cacheFunctions.getGlobals().rootDn);
       res.end();
     },
     endSuccess
   );
-};
+  log.debugSite(sitename,"Routes registered")
+  };
 
 startUp = (server, ldapjs) => {
   ldapjs.listen(parseInt(server.port), server.ip, () => {

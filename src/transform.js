@@ -35,13 +35,13 @@ exports.uniqueEmails = (users) => {
 };
 
 exports.getRootObj = (dc, admin, o) => {
-  var dn = ldapEsc.dn`${dc}`;
+  var dn = ldapEsc.dn`cn=root`;
   return {
     dn: dn,
     attributes: {
       creatorsname: admin,
       entrydn: dn,
-      entryuuid: transform.generateUUID(),
+      entryuuid: this.generateUUID(),
       o: o,
       objectclass: ['top', "RootDSE", 'organization'],
       structuralobjectclass: 'organization',
@@ -50,7 +50,7 @@ exports.getRootObj = (dc, admin, o) => {
   };
 };
 
-exports.getAdamin = (cn, dc) => {
+exports.getAdmin = (cn, dc) => {
   return {
     dn: ldapEsc.dn`cn=${cn},${dc}`,
     attributes: {

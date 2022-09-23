@@ -7,40 +7,45 @@ exports.loglevels = {
   debug: 4
 }
 
+getSite = (site) => {
+  if (site && site.hasOwnProperty("name"))
+    return site.name;
+  if (typeof site === "string")
+    return site;
+  else 
+    return JSON.stringify(site);
+}
+
 exports.debugSite = (site, msg) => {
   if (this.loglevel == this.loglevels.debug) {
-    if (site && site.hasOwnProperty("name"))
-      console.log("[DEBUG] " + site.name + " - " + msg);
-    else if (typeof site === "string")
-      console.log("[DEBUG] " + site + " - " + msg);
-    else console.log("[DEBUG] " + JSON.stringify(site) + " - " + msg);
+    console.log("[DEBUG] " + getSite(site) + " - " + msg);
   }
-};
+}
 
 exports.warnSite = (site, msg) => {
   if (this.loglevel >= this.loglevels.warn)
-    console.log("[WARN] " + site.name + " - " + msg);
-};
+    console.log("[WARN] " + getSite(site) + " - " + msg);
+}
 
 exports.errorSite = (site, msg, error) => {
   if (this.loglevel >= this.loglevels.error) {
-    console.log("[ERROR] " + site.name + " - " + msg);
+    console.log("[ERROR] " + getSite(site) + " - " + msg);
     if (error !== undefined) {
       console.log(error.stack);
     }
   }
-};
+}
 
 exports.debug = (msg) => {
   if (this.loglevel == this.loglevels.debug) {
     console.log("[DEBUG]  - " + msg);
   }
-};
+}
 
 exports.warn = (msg) => {
   if (this.loglevel >= this.loglevels.warn)
     console.log("[WARN] - " + msg);
-};
+}
 
 exports.error = (msg, error) => {
   if (this.loglevel >= this.loglevels.error) {
@@ -49,9 +54,9 @@ exports.error = (msg, error) => {
       console.log(error.stack);
     }
   }
-};
+}
 
 exports.info = (msg) => {
   if (this.loglevel >= this.loglevels.info)
     console.log("[INFO] - " + msg);
-};
+}
