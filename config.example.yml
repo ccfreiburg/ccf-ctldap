@@ -1,15 +1,33 @@
 sites:
   ccf:
-    name: sitename 
-    user: username  // User needs rights to the api in CT
-    password: secret
-    url: https://sitename.church.tools/
+    site:
+      name: sitename 
+      user: username  // User needs rights to the api in CT
+      password: secret1
+      url: https://sitename.church.tools/
+    ldap:
+      o: Organisation Name
+      dc: dc=myorg,dc=tld   // domain components
+      admin: admin
+      password: secret2
+      port: 1389
+      cert: certs/ldap.crt
+      key: certs/ldap.key
+   attributes:  // fields to add to user 
+      - name: key1
+        default: defaultvalue1
+        replacements:   // add value to user with id 
+          - id: 156
+            value: extra
+      - name: key2
+        default: defaultvalue2
     selectionGroupIds:  // ChurchTools Group Ids - only members of these groups will be served by ldap
       - gid 
       - gid
     tranformedGroups:   // ChurchTools Group Ids with the group name which will be served by Ldap
       - gid: gid
         name: Groupname
+        objectClass: usrObjClass  // additionally set objectClass of User to that value if in group
       - gid: gid
         name: Groupname
 // further ChurchTools sites to serve - following the same schema above

@@ -19,7 +19,7 @@ exports.debugSite = (site, msg) => {
 
 exports.warnSite = (site, msg) => {
   if (this.loglevel >= this.loglevels.warn)
-    console.log("[WARN] " + site.sitename + " - " + msg);
+    console.log("[WARN] " + site.name + " - " + msg);
 };
 
 exports.errorSite = (site, msg, error) => {

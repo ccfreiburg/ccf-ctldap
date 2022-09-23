@@ -2,80 +2,67 @@ const path = require("path");
 const ldap = require("ldapjs");
 const YAML = require('yamljs')
 const log = require('./src/logging')
+const transform = require('./src/transform')
+const ctservice = require('./src/ctservice')
+const ldapcache = require('./src/ldapcache')
+const ldapserver = require('./src/ldapserver')
 const c = require('./src/constants')
 
 log.loglevel = log.loglevels.debug
 
-log.info("Starting up CCF Ldap wrapper for ChurchTools ....")
-const config = YAML.load(c.CONFIG_FILE);
-log.debug(JSON.stringify(config))
 
-var rootobj = {
-  dn: "dc=ccfreiburg,dc=de",
-  attributes: {
-    createtimestamp: "20200406114647Z",
-    creatorsname: "cn=admin,dc=ccfreiburg,dc=de",
-    dc: "ccfreiburg",
-    entrycsn: "20200406114647.018289Z#000000#000#000000",
-    entrydn: "dc=ccfreiburg,dc=de",
-    entryuuid: "0a0f7af6-0c48-103a-873b-5963809e173f",
-    hassubordinates: true,
-    modifiersname: "cn=admin,dc=ccfreiburg,dc=de",
-    modifytimestamp: "20200406114647Z",
-    o: "Calvary Chapel Freiburg",
-    objectclass: ["top", "organization"],
-    structuralobjectclass: "organization",
-    subschemasubentry: "cn=Subschema",
-  },
-};
 
-// const server = ldap.createServer();
 
-// server.search("o=example", (req, res, next) => {
-//   const obj = {
-//     dn: req.dn.toString(),
-//     attributes: {
-//       objectclass: ["organization", "top"],
-//       o: "example",
-//     },
-//   };
-// });
-// server.search("o=example", (req, res, next) => {
-//   const obj = {
-//     dn: "o=example",
-//     attributes: {
-//       objectclass: ["organization", "top", "dcObject"],
-//       o: "example",
-//       hasSubordinates: true,
-//     },
-//   };
-//   if (req.filter.matches(obj.attributes)) res.send(obj);
-//   res.end();
-// });
-// server.search("oc=top, cn=Subschema", (req, res, next) => {
-//   const obj = {
-//     dn: "oc=top, cn=Subschema",
-//     attributes: {
-//       parentTo: "all",
-//     },
-//   };
-//   if (req.filter.matches(obj.attributes)) res.send(obj);
-//   res.end();
-// });
 
-// server.search("", (req, res) => {
-//   obj = rootobj;
-//   if (req.filter.matches(obj.attributes)) res.send(obj);
-//   res.end();
-// });
+  // dn: site.compatTransform(site.fnUserDn({ cn: cn })),
+  //   attributes: {
+  //   cn: cn,
+  //     displayname: "Admin",
+  //       id: 0,
+  //         uid: "Admin",
+  //           bbbrole: "admin",
+  //             entryUUID: ,
+  //   givenname: "Administrator",
+  //     objectclass: [c.LDAP_OBJCLASS_USER, "simpleSecurityObject", "organizationalRole"],
+  //   }
 
-// server.listen(1389, () => {
-//   console.log("LDAP server listening at %s", server.url);
-// });
 
-// if (this.config.sites) {
-//   Object.keys(this.config.sites).map((sitename) => {
-//     var site = config.sites[sitename];
-//     console.log(site + " Setting site config");
-//   });
-// }
+const initCache = (site) => {
+  const siteCacheFunctions = ldapcache.init(
+    site.name, 
+    transform.getRootObj(site.ldap.dc, site.ldap.admin, site.ldap.o),
+    transform.getAdmin(site.ldap.admincn, site.ldap.dc, site.ldap.password)
+    )
+
+  const allGoupsIds = site.selectionGroupIds.map((id) => id);
+  site.tranformedGroups.forEach((element) => {
+  if (!allGoupsIds.includes(element.gid))
+      allGoupsIds.push(element.gid);
+  });
+  const churchtoolsdata = ctservice.getChurchToolsData(site.selectionGroupIds, allGoupsIds, site.site)
+
+  const {users,groups} = getLdapDataFromChurchTools(site, churchtoolsdata)
+  
+  ldapcache.addData(site.name,users,groups)
+  return siteCacheFunctions
+}
+
+const updateLdapServerData = (siteldap) => {
+  // Todo implement an update strategy
+}
+
+function start() {
+  log.info("Starting up CCF Ldap wrapper for ChurchTools ....")
+  const config = YAML.load(c.CONFIG_FILE);
+  log.debug(JSON.stringify(config))
+
+  ldapjs = ldapserver.LdapServer(config.server)
+  for (var site in config.sites) {
+    const cacheFunctions = initCache(site)
+    ldapjs.initSite(site.name, cacheFunctions)  
+  }
+  
+  ldapjs.startUp(config.server)
+}
+
+start();

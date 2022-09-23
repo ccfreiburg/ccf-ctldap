@@ -31,3 +31,6 @@ jspm_packages/
 # secret configuration
 config.json
 config.yml
+
+# test data etc. from production
+production
