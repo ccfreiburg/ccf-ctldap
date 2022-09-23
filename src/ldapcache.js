@@ -4,6 +4,7 @@ var ldapEsc = require('ldap-escape');
 ldapcache = []
 
 exports.init = (sitename, rootobj, admin, password, ctAuthenticate) => {
+  ldapcache[sitename] = {};
   ldapcache[sitename].rootobj = rootobj
   ldapcache[sitename].admin = admin
   ldapcache[sitename].passwords = new Map()
@@ -25,8 +26,8 @@ exports.init = (sitename, rootobj, admin, password, ctAuthenticate) => {
   return {
     getGroups: () => ldapcache[sitename].groups.elements,
     getUsers: () => ldapcache[sitename].users.elements,
-    getGlobals,
-    checkAuthentication: (user, password) => checkPassword(sitename, user, password)
+    getGlobals: () => getGlobals(sitename), 
+    checkAuthentication: async (user, password) => await checkPassword(sitename, user, password)
   }
 }
 
@@ -35,7 +36,7 @@ exports.addData = (sitename, users, groups) => {
   ldapcache[sitename].groups.elements = groups
 }
 
-const getGlobals = () => {
+const getGlobals = (sitename) => {
   return { 
     rootDn: ldapcache[sitename].rootobj, 
     adminDn: ldapcache[sitename].admin,
@@ -52,22 +53,22 @@ const getGlobals = () => {
   }
 }
 
-const checkPassword = async (sitename, userDn, password) => {
+checkPassword = async (sitename, userDn, password) => {
     const sitecache = ldapcache[sitename]    
-    if (isBlocked(sitecache, UserDn))
+    if (isBlocked(sitecache.blocks, userDn))
       return false;
     var valid = false;
     if (sitecache.passwords.has(userDn)) 
       valid = sitecache.passwords.get(userDn) === password
     if (!valid && userDn!==sitecache.admin.dn) {
-      valid = await sitecache.ctAuthenticate(user, password)
+      valid = await sitecache.ctAuthenticate(userDn, password)
       if (valid)
         sitecache.passwords.set(user,password)
     }
     if (valid) 
-      removeBlock(sitecache, userDn)
+      removeBlock(sitecache.blocks, userDn)
     else  
-      setBlock(sitecache, userDn)
+      setBlock(sitecache.blocks, userDn)
     return valid
 }
 
@@ -82,7 +83,7 @@ isBlocked = (blocks, userDn) => {
     ); // two hours
     if (now < checkDate) 
       return true;
-    blocks.delete(UserDn)
+    blocks.delete(userDn)
   }
   return false;
 }
@@ -92,7 +93,11 @@ removeBlock = (blocks, userDn) => {
 }
 
 setBlock = (blocks, userDn) => {
-  const block = blocks.get(userDn)
+  var block = { loginErrorCount: 0 }
+  if (blocks.has(userDn)) 
+    block = blocks.get(userDn)
+  else 
+    blocks.set(userDn,block)
   block.loginErrorCount += 1;
   if (block.loginErrorCount > 5) {
       block.loginBlockedDate = new Date();
