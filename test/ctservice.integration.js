@@ -2,7 +2,9 @@ const ctserv = require("../src/ctservice");
 const { expect } = require("chai");
 
 const log = require("../src/logging");
-const site = require('../production/config.json')
+const config = require('../production/config.json')
+const site = config.sites.ccf
+
 
 before(() => log.loglevel = log.loglevels.quiet)
 
@@ -19,10 +21,10 @@ describe("CT API calls from service", () => {
     expect(person.id).to.be.equal(5)
     expect(person.ncuid).to.be.equal("alex.roehm")
   })
-  it("getPersonRecordsForId returns the constructed ncuid for Person without", async () => {
+  it("getPersonRecordsForId without ncuid", async () => {
     const person = await ctserv.getPersonRecordForId(3, site.site);
     expect(person.id).to.be.equal(3)
-    expect(person.ncuid).to.be.equal("samuel.garrard")
+    expect(person).to.not.haveOwnProperty("ncuid")
   })
   it("getChurchToolsData - returns all the data", async () => {
     const data = await ctserv.getChurchToolsData(

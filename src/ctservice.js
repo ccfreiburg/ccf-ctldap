@@ -65,8 +65,10 @@ getPersonRecord = (data) => {
     zip: data.zip,
     city: data.city,
     cmsuserid: (data.cmsUserId ? data.cmsUserId : ""),
-    email: data.email,
+    email: data.email,   
   };
+  if (data[c.LDAPID_FIELD] && data[c.LDAPID_FIELD].length > 0)
+    person[c.LDAPID_FIELD] = data[c.LDAPID_FIELD]
   return person;
 }
 

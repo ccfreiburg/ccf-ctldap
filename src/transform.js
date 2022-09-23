@@ -70,7 +70,7 @@ exports.getAdamin = (cn, dc) => {
   };
 };
 
-exports.getUid = (ctpserson) => {
+exports.setUid = (ctpserson) => {
   if (ctpserson[c.LDAPID_FIELD] && ctpserson[c.LDAPID_FIELD].length > 0)
     return ctpserson[c.LDAPID_FIELD];
   return t.stringConvLowercaseUmlaut(
@@ -93,7 +93,7 @@ exports.transformUser = (ctpserson, attributes, sitename) => {
   if (!ctpserson || !ctpserson.id)
     throw new DataFormatError('Empty user object');
 
-  var cn = this.getUid(ctpserson);
+  var cn = this.setUid(ctpserson);
   var dn = ldapEsc.dn`cn=${cn},ou=${c.LDAP_OU_USERS},o=${sitename}`;
   result = {
     dn: this.lowercase(dn),
@@ -101,7 +101,7 @@ exports.transformUser = (ctpserson, attributes, sitename) => {
       cn: cn,
       id: ctpserson.id,
       displayname: ctpserson.firstName + ' ' + ctpserson.lastName,
-      uid: this.getUid(ctpserson),
+      uid: cn,
       entryUUID: ctpserson.guid,
       givenname: ctpserson.firstName,
       street: ctpserson.lastName,

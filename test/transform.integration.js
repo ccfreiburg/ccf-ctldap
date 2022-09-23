@@ -8,8 +8,8 @@ const site = require("../production/config.json");
 const ldap = require("../production/ldap.json");
 
 describe("Transorm Production data to Ldap", () => {
-  it.only("Equals Snapshot", () => {
-    const ldapData = transform.getLdapDataFromChurchTools(site, ctdata)
+  it("Equals Snapshot", () => {
+    const ldapData = transform.getLdapDataFromChurchTools(site.sites.ccf, ctdata)
     expect(ldapData).to.deep.equalInAnyOrder(ldap);
   })
 });
