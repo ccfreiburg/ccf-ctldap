@@ -1,6 +1,6 @@
 const chai = require("chai");
-const assertArrays = require('chai-arrays');
-chai.use(assertArrays);
+chai.use(require('chai-arrays'));
+chai.use(require('chai-string'));
 const expect = chai.expect
 const transform = require("../src/transform.js");
 //const userMockData = require("./data/getUsersData.json");
@@ -25,7 +25,7 @@ describe("Transorm API results to Ldap", () => {
       },
       "sitename"
     );
-    expect(actual.dn).to.be.equal("cn=newgroupname,ou=groups,o=sitename");
+    expect(actual.dn).to.startsWith("cn=newgroupname");
     expect(actual.attributes.cn).to.be.equal("newGRoupname");
     expect(actual.attributes.id).to.be.equal(2);
     expect(actual.attributes).to.haveOwnProperty("guid");
@@ -87,7 +87,7 @@ describe("Transorm API results to Ldap", () => {
       ncuid: 'peter.pan'
     }
     const actual = transform.transformUser(person, [], "site")
-    expect(actual.dn).to.be.equal("cn=peter.pan,ou=users,o=site");
+    expect(actual.dn).to.startsWith("cn=peter.pan");
     expect(actual.attributes.cn).to.be.equal("peter.pan");
     expect(actual.attributes.uid).to.be.equal("peter.pan");
     expect(actual.attributes.id).to.be.equal(144);

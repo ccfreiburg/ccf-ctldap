@@ -4,11 +4,15 @@ const deepEqualInAnyOrder = require('deep-equal-in-any-order')
 chai.use(deepEqualInAnyOrder)
 const expect = chai.expect
 
+const emptyRoots = {dsn: {}, users: {}, gropups: {}}
+
 describe("LDAP Cache", () => {
   it("init - makes them available through returned functions", () => {
-    const myRoot = { dn: "MyRoot" }
+    const roots = emptyRoots;
+    const myRoot = {dn: "MyRoot"}
+    roots.dsn = myRoot;
     const myAdmin = { dn: "MyAdmin" }
-    const cachefunct = cache.init("vip", myRoot, myAdmin )
+    const cachefunct = cache.init("vip", roots, myAdmin )
     expect(cachefunct.getGlobals().rootDn).to.deep.equalInAnyOrder(myRoot)
     expect(cachefunct.getGlobals().adminDn).to.deep.equalInAnyOrder(myAdmin)
     expect(cachefunct.getGlobals().schemaDn.dn).to.equals("cn=Subschema")
@@ -20,7 +24,7 @@ describe("LDAP Cache", () => {
     const ctAuthMock = () => {
       wasCalled = true
     }
-    const cachefunct = cache.init("vip", {}, { dn: myAdmin }, password, ctAuthMock )
+    const cachefunct = cache.init("vip", emptyRoots, { dn: myAdmin }, password, ctAuthMock )
     const actual = await cachefunct.checkAuthentication(myAdmin, password)
     expect(actual).to.equal(true)
     expect(wasCalled).to.equal(false)

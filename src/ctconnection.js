@@ -100,6 +100,7 @@ getLoginRequest = (baseurl, user, password) => {
 }
 
 exports.authenticate = async ( baseurl, user, password ) => {
+  log.debug("Auth on "+ baseurl + " for " + user)
   const { data } = await ctapi.request(getLoginRequest( baseurl, user, password ))
   return (data.status == "success");
 }

@@ -95,6 +95,11 @@ exports.getPersonsForIds = async (ids, site) => {
   return persons
 }
 
+exports.authWithChurchTools = (site) => {
+  return ( user, password ) => 
+    ctconn.authenticate(site.site.url, user, password)
+}
+
 exports.getChurchToolsData = async (selectionGroupIds, allGoupsIds, site) => {
 
   const ctPersonIds = await this.getPersonsInGroups(selectionGroupIds, site);

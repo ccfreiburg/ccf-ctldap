@@ -1,8 +1,14 @@
 var ldap = require('ldapjs');
+var parseDN = require('ldapjs').parseDN;
 const c = require('./constants');
 const log = require('./logging');
 
 log.loglevel = log.loglevels.debug
+
+const normalize = (astring) => {
+  const str = astring
+  return str.replaceAll(", ",",")
+}
 
 exports.getLdapServer = (server) => {
   if (server.crt && server.key) {
@@ -15,17 +21,20 @@ exports.getLdapServer = (server) => {
     log.info('LDAP Server started without security (no ssl)');
   }
   return {
-    initSite: (sitename, cacheFunctions) => initSite(sitename, cacheFunctions, ldapjs),
+    initSite: (site, cacheFunctions) => initSite(site, cacheFunctions, ldapjs),
     startUp: () => startUp(server, ldapjs),
     getConnections: (cb) => ldapjs.getConnections(cb),
     stopServer: () => ldapjs.close()
   }
 }
 
-initSite = (sitename, cacheFunctions, ldapjs) => {
+initSite = (site, cacheFunctions, ldapjs) => {
+  const sitename = site.site.name
+  const dc = site.ldap.dc
+
   function authorize(req, _res, next) {
     const adminDn = cacheFunctions.getGlobals().adminDn.dn;
-    if (!req.connection.ldap.bindDN.equals(adminDn.dn)) {
+    if (!req.connection.ldap.bindDN.equals(adminDn)) {
       log.warnSite(sitename, 'Rejected search without proper binding!');
       return next(new ldap.InsufficientAccessRightsError());
     }
@@ -45,9 +54,8 @@ initSite = (sitename, cacheFunctions, ldapjs) => {
     var strDn = req.dn.toString();
     try {
       cacheFunctions.getUsers().forEach((user) => {
-        if (
-          (req.checkAll || parseDN(strDn).equals(parseDN(user.dn))) &&
-          req.filter.matches(user.attributes)
+        if (parseDN(strDn).equals(parseDN(user.dn)) ||
+          (!req.checkAll && req.filter.matches(user.attributes))
         ) {
           log.debugSite(sitename, 'MatchUser: ' + user.dn);
           res.send(user);
@@ -63,16 +71,14 @@ initSite = (sitename, cacheFunctions, ldapjs) => {
     var strDn = req.dn.toString();
     try {
       cacheFunctions.getGroups().forEach((group) => {
-        if (
-          (req.checkAll || parseDN(strDn).equals(parseDN(group.dn))) &&
-          req.filter.matches(g.attributes)
-        ) {
-          log.debugSite(sitename, 'MatchGroup: ' + g.dn);
-          res.send(g);
+        if (parseDN(strDn).equals(parseDN(group.dn)) || 
+          (!req.checkAll && req.filter.matches(group.attributes))) {
+          log.debugSite(sitename, 'MatchGroup: ' + group.dn);
+          res.send(group);
         }
       });
     } catch (error) {
-      logError(sitename, 'Error while retrieving groups: ', error);
+      log.errorSite(sitename, 'Error while retrieving groups: ', error);
     }
     return next();
   }
@@ -101,20 +107,40 @@ initSite = (sitename, cacheFunctions, ldapjs) => {
   log.debugSite(sitename,"Resgistering routes")
   // Login bind for user
   ldapjs.bind(
-    'ou=' + c.LDAP_OU_USERS + ',o=' + sitename,
-    searchLogging,
+    'ou=' + c.LDAP_OU_USERS + ","+dc,
+    (req, res, next) => {
+      log.debugSite(
+        sitename,
+        'BIND dn: ' + req.dn.toString() 
+      );
+      next()
+    },
+    authenticate,
+    endSuccess
+  );
+
+  ldapjs.bind(
+    "cn=admin,dc=ccfreiburg,dc=de",
+    //cacheFunctions.getGlobals().adminDn.dn,
+    (req, res, next) => {
+      log.debugSite(
+        sitename,
+        'BIND dn: ' + req.dn 
+      );
+      next()
+    },
     authenticate,
     endSuccess
   );
 
   // Search implementation for user search
   ldapjs.search(
-    'ou=' + c.LDAP_OU_USERS + ',o=' + sitename,
+    'ou=' + c.LDAP_OU_USERS + ',' + dc,
     searchLogging,
     authorize,
     function (req, _res, next) {
       log.debugSite(sitename, 'Search for users');
-      req.checkAll = req.scope !== 'base' && req.dn.rdns.length === 2;
+      req.checkAll = req.scope !== 'base' || req.dn.rdns.length > parseDN(dc).rdns.length+1;
       return next();
     },
     sendUsers,
@@ -123,12 +149,12 @@ initSite = (sitename, cacheFunctions, ldapjs) => {
 
   // Search implementation for group search
   ldapjs.search(
-    'ou=' + c.LDAP_OU_GROUPS + ',o=' + sitename,
+    'ou=' + c.LDAP_OU_GROUPS + ',' + dc,
     searchLogging,
     authorize,
     function (req, _res, next) {
       log.debugSite(sitename, 'Search for groups');
-      req.checkAll = req.scope !== 'base' && req.dn.rdns.length === 2;
+      req.checkAll = req.scope !== 'base' || req.dn.rdns.length > parseDN(dc).rdns.length+1;
       return next();
     },
     sendGroups,
@@ -137,13 +163,13 @@ initSite = (sitename, cacheFunctions, ldapjs) => {
 
   // Search implementation for user and group search
   ldapjs.search(
-    'o=' + sitename,
+    dc,
     searchLogging,
     authorize,
     function (req, _res, next) {
-      log.debugSite(sitename, 'Search for users and groups combined');
-      req.checkAll = req.scope === 'sub';
-      return next();
+       log.debugSite(sitename, 'Search for users and groups combined');
+       req.checkAll = req.scope === 'sub';
+       return next();
     },
     sendUsers,
     sendGroups,

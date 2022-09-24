@@ -1,44 +1,43 @@
 const c = require('./constants')
 var ldapEsc = require('ldap-escape');
+const { use } = require('chai');
 
 ldapcache = []
 
-exports.init = (sitename, rootobj, admin, password, ctAuthenticate) => {
+const normalize = (astring) => {
+  const str = astring
+  return str.replace(", ",",").replace(", ",",").replace(", ",",")
+}
+
+exports.init = (sitename, rootobjects, admin, password, ctAuthenticate) => {
   ldapcache[sitename] = {};
-  ldapcache[sitename].rootobj = rootobj
+  ldapcache[sitename].rootobj = rootobjects.dsn
   ldapcache[sitename].admin = admin
   ldapcache[sitename].passwords = new Map()
-  ldapcache[sitename].passwords.set(admin.dn, password)
+  const admindn = normalize(admin.dn)
+  ldapcache[sitename].passwords.set(admindn, password)
   ldapcache[sitename].blocks = new Map()
-  ldapcache[sitename].users = {
-    "o": sitename,
-    "ou": c.LDAP_OU_USERS,
-    "cn": "ou=" + c.LDAP_OU_USERS + ",o=" + sitename,
-    "elements": []
-  }
-  ldapcache[sitename].groups = {
-    "o": sitename,
-    "ou": c.LDAP_OU_GROUPS,
-    "cn": "ou=" + c.LDAP_OU_USERS + ",o=" + sitename,
-    "elements": []
-  }
-  ldapcache[sitename].ctAuthenticate = ctAuthenticate
+  ldapcache[sitename].users = rootobjects.users 
+    ldapcache[sitename].groups = rootobjects.groups
+    ldapcache[sitename].ctAuthenticate = ctAuthenticate
   return {
-    getGroups: () => ldapcache[sitename].groups.elements,
-    getUsers: () => ldapcache[sitename].users.elements,
+    getGroups: () => ldapcache[sitename].groups.attributes.elements,
+    getUsers: () => ldapcache[sitename].users.attributes.elements,
     getGlobals: () => getGlobals(sitename), 
     checkAuthentication: async (user, password) => await checkPassword(sitename, user, password)
   }
 }
 
 exports.addData = (sitename, users, groups) => {
-  ldapcache[sitename].users.elements = users
-  ldapcache[sitename].groups.elements = groups
+  ldapcache[sitename].users.attributes.elements = users
+  ldapcache[sitename].groups.attributes.elements = groups
 }
 
 const getGlobals = (sitename) => {
   return { 
     rootDn: ldapcache[sitename].rootobj, 
+    userRoot: ldapcache[sitename].users, 
+    groupRoot: ldapcache[sitename].groups, 
     adminDn: ldapcache[sitename].admin,
     schemaDn: {
       "dn": "cn=Subschema",
@@ -55,20 +54,23 @@ const getGlobals = (sitename) => {
 
 checkPassword = async (sitename, userDn, password) => {
     const sitecache = ldapcache[sitename]    
-    if (isBlocked(sitecache.blocks, userDn))
+    const userdn = normalize(userDn)
+
+    if (isBlocked(sitecache.blocks, userdn))
       return false;
     var valid = false;
-    if (sitecache.passwords.has(userDn)) 
-      valid = sitecache.passwords.get(userDn) === password
-    if (!valid && userDn!==sitecache.admin.dn) {
-      valid = await sitecache.ctAuthenticate(userDn, password)
+    if (sitecache.passwords.has(userdn)) {
+      valid = sitecache.passwords.get(userdn) === password
+    } 
+    if (!valid && userdn!=sitecache.admin.dn) {
+      valid = await sitecache.ctAuthenticate(userdn, password)
       if (valid)
-        sitecache.passwords.set(user,password)
+        sitecache.passwords.set(userdn,password)
     }
     if (valid) 
-      removeBlock(sitecache.blocks, userDn)
+      removeBlock(sitecache.blocks, userdn)
     else  
-      setBlock(sitecache.blocks, userDn)
+      setBlock(sitecache.blocks, userdn)
     return valid
 }
 

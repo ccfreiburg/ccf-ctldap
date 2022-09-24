@@ -13,6 +13,7 @@
     "chai": "^4.3.4",
     "chai-arrays": "^2.2.0",
     "chai-as-promised": "^7.1.1",
+    "chai-string": "^1.5.0",
     "deep-equal-in-any-order": "^2.0.0",
     "mocha": "^8.3.2"
   },

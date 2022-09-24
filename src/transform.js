@@ -35,24 +35,47 @@ exports.uniqueEmails = (users) => {
 };
 
 exports.getRootObj = (dc, admin, o) => {
-  var dn = ldapEsc.dn`cn=root`;
+  var dn = dc;
+  //ldapEsc.dn`cn=root`;
   return {
-    dn: dn,
-    attributes: {
-      creatorsname: admin,
-      entrydn: dn,
-      entryuuid: this.generateUUID(),
-      o: o,
-      objectclass: ['top', "RootDSE", 'organization'],
-      structuralobjectclass: 'organization',
-      subschemasubentry: 'cn=Subschema',
+    users: {
+      dn: "ou="+c.LDAP_OU_USERS+","+dc,
+      attributes: {
+        o: o,
+        ou: c.LDAP_OU_USERS,
+        cn: c.LDAP_OU_USERS,
+        elements: [],
+      }
     },
+    groups: {
+      dn: "ou="+c.LDAP_OU_GROUPS+","+dc,
+      attributes: {
+        o: o,
+        ou: c.LDAP_OU_GROUPS,
+        cn: c.LDAP_OU_GROUPS,
+        elements: [],
+      }
+    },
+    dsn: {
+      dn: dc,
+      attributes: {
+        creatorsname: admin,
+        entrydn: dc,
+        entryuuid: this.generateUUID(),
+        o: o,
+        namingContexts: [ dc ],
+        objectclass: ['top', 'RootDSE', 'organization'],
+        structuralobjectclass: 'organization',
+        subschemasubentry: 'cn=Subschema',
+      }
+    }
   };
 };
 
 exports.getAdmin = (cn, dc) => {
+  const dn = ldapEsc.dn`cn=${cn}` + ',' + dc;
   return {
-    dn: ldapEsc.dn`cn=${cn},${dc}`,
+    dn: dn,
     attributes: {
       cn: cn,
       displayname: 'Admin',
@@ -88,13 +111,13 @@ exports.addConfigAttributes = (ctperson, attributes) => {
   });
 };
 
-exports.transformUser = (ctpserson, attributes, sitename) => {
+exports.transformUser = (ctpserson, attributes, dc) => {
   result = {};
   if (!ctpserson || !ctpserson.id)
     throw new DataFormatError('Empty user object');
 
   var cn = this.setUid(ctpserson);
-  var dn = ldapEsc.dn`cn=${cn},ou=${c.LDAP_OU_USERS},o=${sitename}`;
+  var dn = ldapEsc.dn`cn=${cn}` + ',ou=' + c.LDAP_OU_USERS + ',' + dc;
   result = {
     dn: this.lowercase(dn),
     attributes: {
@@ -112,7 +135,7 @@ exports.transformUser = (ctpserson, attributes, sitename) => {
       sn: ctpserson.lastName,
       email: this.lowercase(ctpserson.email),
       mail: this.lowercase(ctpserson.email),
-      objectclass: [c.LDAP_OBJCLASS_USER],
+      objectclass: [c.LDAP_OBJCLASS_USER,"person","organizationalPerson","user"],
       memberof: [],
     },
   };
@@ -120,11 +143,11 @@ exports.transformUser = (ctpserson, attributes, sitename) => {
   return result;
 };
 
-exports.trsansformGroup = (ctgroup, grtransform, sitename) => {
+exports.trsansformGroup = (ctgroup, grtransform, dc) => {
   if (!ctgroup || !ctgroup.id)
     throw new DataFormatError('Group from CT was emtpy');
   var cn = grtransform && grtransform.name ? grtransform.name : ctgroup.name;
-  var dn = ldapEsc.dn`cn=${cn},ou=${c.LDAP_OU_GROUPS},o=${sitename}`;
+  var dn = ldapEsc.dn`cn=${cn}` + ',ou=' + c.LDAP_OU_GROUPS + ',' + dc;
   return {
     dn: this.lowercase(dn),
     attributes: {
@@ -152,10 +175,10 @@ exports.connectUsersAndGroups = (
     memberships
       .filter((m) => m.groupId == group.attributes.id)
       .forEach((memberhip) => {
-        const user = users.find((u) => (u.attributes.id == memberhip.personId));
+        const user = users.find((u) => u.attributes.id == memberhip.personId);
         if (user) {
           user.attributes.memberof.push(group.dn);
-          if (objClassGrpMem && objClassGrpMem.hasOwnProperty("objectClass"))
+          if (objClassGrpMem && objClassGrpMem.hasOwnProperty('objectClass'))
             user.attributes.objectclass.push(objClassGrpMem.objectClass);
           group.attributes.uniquemember.push(user.dn);
         }
@@ -163,24 +186,20 @@ exports.connectUsersAndGroups = (
   });
 };
 
-exports.getLdapGroupsWithoutMembers = (
-  ctgroups,
-  tranformedGroups,
-  sitename
-) => {
+exports.getLdapGroupsWithoutMembers = (ctgroups, tranformedGroups, dc) => {
   const groups = [];
   ctgroups.forEach((element) => {
     grptransform = tranformedGroups.find((t) => t.gid == element.id);
-    const grp = this.trsansformGroup(element, grptransform, sitename);
+    const grp = this.trsansformGroup(element, grptransform, dc);
     groups.push(grp);
   });
   return groups;
 };
 
-exports.getLdapUsers = (ctpersons, attributes, sitename) => {
+exports.getLdapUsers = (ctpersons, attributes, dc) => {
   const users = [];
   ctpersons.forEach((element) => {
-    const user = this.transformUser(element, attributes, sitename);
+    const user = this.transformUser(element, attributes, dc);
     users.push(user);
   });
   return users;
@@ -190,12 +209,12 @@ exports.getLdapDataFromChurchTools = (site, churchtoolsdata) => {
   const groups = this.getLdapGroupsWithoutMembers(
     churchtoolsdata.groups,
     site.tranformedGroups,
-    site.site.name
+    site.ldap.dc
   );
   const users = this.getLdapUsers(
     churchtoolsdata.persons,
     site.attributes,
-    site.site.name
+    site.ldap.dc
   );
   this.connectUsersAndGroups(
     churchtoolsdata.memberships,
