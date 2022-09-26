@@ -108,4 +108,20 @@ describe("Transorm API results to Ldap", () => {
     transform.connectUsersAndGroups([membership], [group], [person], [grptransf])
     expect(person.attributes.objectclass).to.include("ef")
   })
+  it("addUsersAdminGroup - adds Ldap admin user", () => {
+    const users = []
+    const ldapad = { dn: "hey", attributes: {memberof: []}}
+    const actual = transform.addUsersAdminGroup(users,ldapad,[4],"admin","dcdc")
+    expect(actual.dn).to.equal("cn=admin,ou=groups,dcdc")
+    expect(actual.attributes.uniqueMember).to.have.length(1)
+    expect(actual.attributes.uniqueMember[0]).to.equal(ldapad.dn)
+  })
+  it("addUsersAdminGroup - adds users with matching ids", () => {
+    const users = [{ dn: "hho", attributes: { id: 4, memberof: []}}]
+    const ldapad = { dn: "hey", attributes: {memberof: []}}
+    const actual = transform.addUsersAdminGroup(users,ldapad,[4],"admin","dcdc")
+    expect(actual.dn).to.equal("cn=admin,ou=groups,dcdc")
+    expect(actual.attributes.uniqueMember).to.have.length(2)
+    expect(actual.attributes.uniqueMember).to.include("hho")
+  })
 });

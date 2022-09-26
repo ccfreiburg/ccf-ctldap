@@ -1,4 +1,5 @@
 const chai = require("chai")
+const log = require('../src/logging')
 const cache = require("../src/ldapcache")
 const deepEqualInAnyOrder = require('deep-equal-in-any-order')
 chai.use(deepEqualInAnyOrder)
@@ -7,6 +8,9 @@ const expect = chai.expect
 const emptyRoots = {dsn: {}, users: {}, gropups: {}}
 
 describe("LDAP Cache", () => {
+  before( () => {
+    log.logger.level = 'silent'
+  })
   it("init - makes them available through returned functions", () => {
     const roots = emptyRoots;
     const myRoot = {dn: "MyRoot"}

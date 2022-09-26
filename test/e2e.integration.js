@@ -10,9 +10,11 @@ const ldap = require('ldapjs');
 
 var client = {};
 
-function searchWrapper(search, expectEntries, done) {
+
+function searchWrapper(search, expectEntries, done, options) {
 const entries = [];
-client.search(search, (err,res)=>{
+const searchOptions = (options?options:{ scope: "base"})
+client.search(search, searchOptions, (err,res)=>{
   res.on('searchEntry', 
     (entry) => {
       entries.push(entry);
@@ -30,14 +32,14 @@ client.search(search, (err,res)=>{
   })
 }
 
-function boundSearchWrapper(search, expectEntries, done) {
+function boundSearchWrapper(search, expectEntries, done, options) {
   client.bind("cn=admin,dc=ccfreiburg,dc=de", "adminpw", (err) => {
     if (err) {
       done()
       chai.assert.fail(err.lde_message)
     } else {
       searchWrapper(search, expectEntries, 
-          done )
+          done, options )
     }
   })
 }
@@ -46,6 +48,8 @@ function boundSearchWrapper(search, expectEntries, done) {
 describe("LDAP Client Server E2E Tests (e2e.integration)", () => {
 
   before( async () => {
+    log.logger.level = 'silent'
+
     await main.start(config,
       async () => data,                                // data func mock
       (site) => async (u,p) => { return p==="alex" })  // pasword check mock
@@ -141,7 +145,7 @@ describe("LDAP Client Server E2E Tests (e2e.integration)", () => {
       (entries) => {
         expect(entries).to.have.length.above(10)        
       }, 
-      done)
+      done, { scope:"sub" })
   })
   
   it("Get dc - a user", (done) => {
@@ -161,4 +165,57 @@ describe("LDAP Client Server E2E Tests (e2e.integration)", () => {
       }, 
       done)
   })
+
+  it("Get dc - query base dn", (done) => {
+    boundSearchWrapper(
+      "dc=ccfreiburg,dc=de", 
+      (entries) => {
+        expect(entries).to.have.length(1)        
+        expect(entries[0].dn).to.equal("dc=ccfreiburg,dc=de")
+      }, 
+      done, { scope:"one" })
+  })
+
+  it("Get dc - query base dn like nextcloud for users", (done) => {
+    boundSearchWrapper(
+      "dc=ccfreiburg,dc=de", 
+      (entries) => {
+        expect(entries).to.have.length.above(13)        
+      }, 
+      done, { scope:"sub", filter: "(&(objectclass=nextclouduser)(displayname=*))" })
+  })
+
+  xit("Get dc - query throws", (done) => {
+    searchWrapper(
+      'cn=eroor,ou=error,dc=error,o=error', () => {}, done)
+  })
+
+
+  it("Get dc - query base dn like nextcloud", (done) => {
+    const entries = [];
+    const searchOptions =  {scope: "sub", filter: "(&(|(objectclass=nextclouduser)))"}
+    client.bind("cn=admin,dc=ccfreiburg,dc=de", "adminpw", (err) => {
+      if (err) {
+        done()
+        chai.assert.fail(err.lde_message)
+      } else {
+        client.search("dc=ccfreiburg,dc=de", searchOptions, (err,res)=>{
+        res.on('searchEntry', 
+          (entry) => {
+            entries.push(entry);
+      });   
+      res.on('error', (err) => {
+        log.debug(err)
+        done()        
+        chai.assert.fail(err.lde_message)
+      });
+      res.on('end', (result) => {
+        expect(result.status).to.equal(0)
+        done()
+        });
+      })
+      
+      }})
+    })
 });
+

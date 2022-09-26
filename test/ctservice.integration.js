@@ -6,10 +6,13 @@ const config = require('../production/config.json')
 const site = config.sites.ccf
 
 
-before(() => log.loglevel = log.loglevels.quiet)
+
 
 
 describe("CT API calls from service", () => {
+  before( () => {
+    log.logger.level = 'silent'
+  })  
   it("Selection Group returns the group info and personIds", async () => {
     const personIds = await ctserv.getPersonsInGroups(site.selectionGroupIds, site.site);
     expect(personIds.length).to.be.above(15)
@@ -20,11 +23,6 @@ describe("CT API calls from service", () => {
     const person = await ctserv.getPersonRecordForId(5, site.site);
     expect(person.id).to.be.equal(5)
     expect(person.ncuid).to.be.equal("alex.roehm")
-  })
-  it("getPersonRecordsForId without ncuid", async () => {
-    const person = await ctserv.getPersonRecordForId(3, site.site);
-    expect(person.id).to.be.equal(3)
-    expect(person).to.not.haveOwnProperty("ncuid")
   })
   it("getChurchToolsData - returns all the data", async () => {
     const data = await ctserv.getChurchToolsData(

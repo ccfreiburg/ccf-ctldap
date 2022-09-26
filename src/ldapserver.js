@@ -14,17 +14,17 @@ exports.getLdapServer = (server) => {
   if (server.crt && server.key) {
     var ldapCert = fs.readFileSync(server.crt, { encoding: 'utf8' });
     var ldapKey = fs.readFileSync(server.key, { encoding: 'utf8' });
-    ldapjs = ldap.createServer({ certificate: ldapCert, key: ldapKey });
+    ldapjs = ldap.createServer({ log: log.logger, certificate: ldapCert, key: ldapKey });
     log.info('LDAP Server started with ssl');
   } else {
-    ldapjs = ldap.createServer();
+    ldapjs = ldap.createServer({ log: log.logger });
     log.info('LDAP Server started without security (no ssl)');
   }
   return {
     initSite: (site, cacheFunctions) => initSite(site, cacheFunctions, ldapjs),
-    startUp: () => startUp(server, ldapjs),
+    startUp: (cb) => startUp(server, ldapjs, cb),
     getConnections: (cb) => ldapjs.getConnections(cb),
-    stopServer: () => ldapjs.close()
+    stopServer: () => stopServer()
   }
 }
 
@@ -42,11 +42,16 @@ initSite = (site, cacheFunctions, ldapjs) => {
   }
 
   function searchLogging(req, _res, next) {
-    log.debugSite(
-      sitename,
-      'SEARCH base object: ' + req.dn.toString() + ' scope: ' + req.scope
-    );
-    log.debugSite(sitename, 'Filter: ' + req.filter.toString());
+    try {
+      log.debugSite(
+        sitename,
+        'SEARCH base object: ' + req.dn.toString() + ' scope: ' + req.scope
+      );
+      log.debugSite(sitename, 'Filter: ' + req.filter.toString());
+    } catch (err) {
+      log.debug(req)
+      log.debug(err)
+    }
     return next();
   }
 
@@ -77,6 +82,22 @@ initSite = (site, cacheFunctions, ldapjs) => {
           res.send(group);
         }
       });
+    } catch (error) {
+      log.errorSite(sitename, 'Error while retrieving groups: ', error);
+    }
+    return next();
+  }
+
+  function sendOrga(req, res, next) {
+    var strDn = req.dn.toString();
+    try {
+      const glob = cacheFunctions.getGlobals();
+      if (req.checkAll && parseDN(strDn).equals(parseDN(glob.rootDn.dn)))
+        res.send(glob.rootDn);
+      if (req.checkAll && parseDN(strDn).equals(parseDN(glob.groupRoot.dn)))
+        res.send(glob.groupRoot);
+      if (req.checkAll && parseDN(strDn).equals(parseDN(glob.userRoot.dn)))
+        res.send(glob.userRoot);
     } catch (error) {
       log.errorSite(sitename, 'Error while retrieving groups: ', error);
     }
@@ -120,8 +141,8 @@ initSite = (site, cacheFunctions, ldapjs) => {
   );
 
   ldapjs.bind(
-    "cn=admin,dc=ccfreiburg,dc=de",
-    //cacheFunctions.getGlobals().adminDn.dn,
+    //"cn=admin,dc=ccfreiburg,dc=de",
+    cacheFunctions.getGlobals().adminDn.dn,
     (req, res, next) => {
       log.debugSite(
         sitename,
@@ -140,7 +161,7 @@ initSite = (site, cacheFunctions, ldapjs) => {
     authorize,
     function (req, _res, next) {
       log.debugSite(sitename, 'Search for users');
-      req.checkAll = req.scope !== 'base' || req.dn.rdns.length > parseDN(dc).rdns.length+1;
+      req.checkAll = (req.scope !== 'base' && req.scope !== 'sub') || req.dn.rdns.length > parseDN(dc).rdns.length+1;
       return next();
     },
     sendUsers,
@@ -168,11 +189,12 @@ initSite = (site, cacheFunctions, ldapjs) => {
     authorize,
     function (req, _res, next) {
        log.debugSite(sitename, 'Search for users and groups combined');
-       req.checkAll = req.scope === 'sub';
+       req.checkAll = (req.scope !== 'base' && req.scope !== 'sub');
        return next();
     },
     sendUsers,
     sendGroups,
+    sendOrga,
     endSuccess
   );
 
@@ -198,11 +220,23 @@ initSite = (site, cacheFunctions, ldapjs) => {
     },
     endSuccess
   );
+
+  // throw exception during search
+  ldapjs.search(
+    'cn=eroor,ou=error,dc=error,o=error',
+    function (req, res) {
+      throw new Error("for testing")
+    },
+    endSuccess
+  );
+
   log.debugSite(sitename,"Routes registered")
   };
 
-startUp = (server, ldapjs) => {
-  ldapjs.listen(parseInt(server.port), server.ip, () => {
-    log.info('ChurchTools-LDAP-Wrapper listening @ ' + ldapjs.url);
-  });
+stopServer = () => {
+  ldapjs.close()
+}
+
+startUp = (server, ldapjs, cb) => {
+  ldapjs.listen(parseInt(server.port), server.ip, cb)
 };

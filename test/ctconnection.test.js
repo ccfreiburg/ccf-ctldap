@@ -16,9 +16,11 @@ const site = {
   url: "https://nopf.church.toys/",
 };
 
-before(() => log.loglevel = log.loglevels.quiet)
-
 describe("Church Tools Connection", () => {
+  before( () => {
+    log.logger.level = 'silent'
+  })  
+
   it("getConnection for new site returns empty connection object", () => {
     var mysite = { ...site };
     mysite.name = "asdfgggg";

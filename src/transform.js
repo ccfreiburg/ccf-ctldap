@@ -1,6 +1,7 @@
 const ldapEsc = require('ldap-escape');
 const c = require('./constants');
 const crypto = require('crypto');
+const { result } = require('./ctapi');
 
 class DataFormatError extends Error {
   constructor(message) {
@@ -37,7 +38,7 @@ exports.uniqueEmails = (users) => {
 exports.getRootObj = (dc, admin, o) => {
   var dn = dc;
   //ldapEsc.dn`cn=root`;
-  return {
+  var result = {
     users: {
       dn: "ou="+c.LDAP_OU_USERS+","+dc,
       attributes: {
@@ -67,9 +68,12 @@ exports.getRootObj = (dc, admin, o) => {
         objectclass: ['top', 'RootDSE', 'organization'],
         structuralobjectclass: 'organization',
         subschemasubentry: 'cn=Subschema',
+        elements: []
       }
     }
-  };
+  }
+  result.dsn.attributes.elements.push(result.users, result.groups)
+  return result
 };
 
 exports.getAdmin = (cn, dc) => {
@@ -89,14 +93,30 @@ exports.getAdmin = (cn, dc) => {
         'simpleSecurityObject',
         'organizationalRole',
       ],
+      memberof: []
     },
   };
+};
+
+exports.getAdminGroup = (cn, dc) => {
+  const dn = ldapEsc.dn`cn=${cn}` + ",ou=" +c.LDAP_OU_GROUPS+ ',' + dc;
+  return {
+    dn: dn,
+    attributes: {
+      cn: cn,
+      id: 0,
+      displayname: "Administrators",
+      entryUUID: '',
+      objectClass: [c.LDAP_OBJCLASS_GROUP],
+      uniqueMember: [ ]
+    }
+  }
 };
 
 exports.setUid = (ctpserson) => {
   if (ctpserson[c.LDAPID_FIELD] && ctpserson[c.LDAPID_FIELD].length > 0)
     return ctpserson[c.LDAPID_FIELD];
-  return t.stringConvLowercaseUmlaut(
+  return this.stringConvLowercaseUmlaut(
     ctpserson.firstName + '.' + ctpserson.lastName
   );
 };
@@ -112,7 +132,7 @@ exports.addConfigAttributes = (ctperson, attributes) => {
 };
 
 exports.transformUser = (ctpserson, attributes, dc) => {
-  result = {};
+  var result = {};
   if (!ctpserson || !ctpserson.id)
     throw new DataFormatError('Empty user object');
 
@@ -162,11 +182,24 @@ exports.trsansformGroup = (ctgroup, grtransform, dc) => {
   };
 };
 
+exports.addUsersAdminGroup = (users, ldapadmin, ids, cn, dc) => {
+  const admingroup = this.getAdminGroup(cn,dc)
+  users.forEach( (user) => {
+    if (ids.includes(user.attributes.id)) {
+      admingroup.attributes.uniqueMember.push(user.dn)
+      user.attributes.memberof.push(admingroup.dn)
+    }
+  })  
+  admingroup.attributes.uniqueMember.push(ldapadmin.dn)
+  ldapadmin.attributes.memberof.push(admingroup.dn)
+  return admingroup;
+}
+
 exports.connectUsersAndGroups = (
   memberships,
   groups,
   users,
-  tranformedGroups
+  tranformedGroups,
 ) => {
   groups.forEach((group) => {
     const objClassGrpMem = tranformedGroups.find(

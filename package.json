@@ -15,13 +15,15 @@
     "chai-as-promised": "^7.1.1",
     "chai-string": "^1.5.0",
     "deep-equal-in-any-order": "^2.0.0",
-    "mocha": "^8.3.2"
+    "mocha": "^8.3.2",
+    "pino-pretty": "^9.1.0"
   },
   "dependencies": {
     "axios": "^0.21.4",
     "ldap-escape": "^2.0.5",
     "ldapjs": "^2.3.1",
     "path": "^0.12.7",
+    "pino": "^8.6.0",
     "yamljs": "^0.3.0"
   }
 }

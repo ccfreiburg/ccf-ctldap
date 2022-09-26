@@ -11,11 +11,11 @@ ChurchToolsError = ctconn.ChurchToolsError;
 const config = require('../production/config.json')
 const site = config.sites.ccf.site
 
-before(() => {
-  log.loglevel = log.loglevels.quiet
-})
+describe("API call integration ctconnection", () => {
+  before( () => {
+    log.logger.level = 'silent'
+  })  
 
-describe("Simlpe API call integration works", () => {
   it("Info: gets info object", async () => {
     const result = await ctconn.infoReal(site.url)
     expect(result.shortName).to.equal("CCF")
