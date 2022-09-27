@@ -19,7 +19,7 @@ describe("API call integration ctconnection", () => {
   it("Info: gets info object", async () => {
     const result = await ctconn.infoReal(site.url)
     expect(result.shortName).to.equal("CCF")
-  }).timeout(2000);
+  }).timeout(4000);
 
   it("getCsrfTokenReal: throws exception", async () => {
     const cookie = "";

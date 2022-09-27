@@ -65,10 +65,12 @@ const getGlobals = (sitename) => {
 }
 
 exports.getUserPropertyForAuth = (userdn, sitename) => {
-  const user = ldapcache[sitename].users.attributes.elements.find((u)=>u.dn===userdn)
-  log.debugSite(sitename,JSON.stringify(user))
+  const users = ldapcache[sitename].users.attributes.elements
+  if (!users || !Array.isArray(users))
+    return userdn
+  const user = users.find((u)=>u.dn===userdn)
   if (!user)
-    return null
+    return userdn
   return user.attributes.entryUUID
 }
 

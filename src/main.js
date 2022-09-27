@@ -21,7 +21,7 @@ const initCache = async (site, getChurchToolsDataFunc, authChurchToolsFunc) => {
   const churchtoolsdata = await getChurchToolsDataFunc(site.selectionGroupIds, site.tranformedGroups, site.site)
   const {users,groups} = transform.getLdapData(site, churchtoolsdata, adminuser)
    
-  siteCacheFunctions.setData(site.site.name,users,groups)
+  siteCacheFunctions.setData(users,groups)
   return siteCacheFunctions
 }
 
