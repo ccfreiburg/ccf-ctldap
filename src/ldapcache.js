@@ -1,7 +1,6 @@
 const c = require('./constants')
 const log = require('./logging')
 var ldapEsc = require('ldap-escape');
-const { use } = require('chai');
 
 ldapcache = []
 

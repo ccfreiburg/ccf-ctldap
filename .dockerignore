@@ -1,0 +1,12 @@
+node_modules
+test
+.github
+.vscode
+nextcloud
+production
+config
+certs
+config.*
+docker*
+Docker*
+.git*

@@ -1,3 +1,9 @@
+server:
+  port: 1389
+  ip: 0.0.0.0
+  updateinterval: 600  // intervall in seconds 
+  cert: certs/ldap.crt
+  key: certs/ldap.key
 sites:
   ccf:
     site:
@@ -8,19 +14,20 @@ sites:
     ldap:
       o: Organisation Name
       dc: dc=myorg,dc=tld   // domain components
-      admin: admin
+      admincn: admin
       password: secret2
-      port: 1389
-      cert: certs/ldap.crt
-      key: certs/ldap.key
    attributes:  // fields to add to user 
       - name: key1
         default: defaultvalue1
         replacements:   // add value to user with id 
-          - id: 156
+          - id: id
             value: extra
       - name: key2
         default: defaultvalue2
+    adminGroup: 
+      cn: "admin" // 
+      members:    // personid s of users to put in admin group
+        - id 
     selectionGroupIds:  // ChurchTools Group Ids - only members of these groups will be served by ldap
       - gid 
       - gid

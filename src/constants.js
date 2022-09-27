@@ -1,4 +1,4 @@
-exports.CONFIG_FILE = "./production/config.yml"
+exports.CONFIG_FILE = "/ldap/config/config.yml"
 exports.API_SLUG = "api"
 exports.WHOAMI_AP = "/whoami?only_allow_authenticated=true"
 exports.CSRF_AP = "/csrftoken"

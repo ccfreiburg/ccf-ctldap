@@ -5,6 +5,8 @@ const log = require('./src/logging');
 const nc = require('./src/nextcloud');
 const fs = require('fs');
 const { argv } = require('process');
+const pino = require('pino')
+const pretty = require('pino-pretty')
 
 function write(name, data) {
   try {
@@ -71,7 +73,7 @@ run = async () => {
   } else if (process.argv.includes('--testsnapshot')) {
     sanpshot();
   } else {
-    log.logger.level = 'info'
+    log.logger = pino({ level: 'info', transport: { target: 'pino-pretty' } })
     const config = main.getConfig(c.CONFIG_FILE)
     start = await main.start(
       config,
