@@ -27,6 +27,10 @@ exports.debugSite = (site, msg) => {
   // }
 }
 
+exports.infoSite = (site, msg) => {
+  this.logger.info(getSite(site) + " - " + msg)
+ }
+
 exports.warnSite = (site, msg) => {
   this.logger.warn(getSite(site) + " - " + msg)
   // if (this.loglevel >= this.loglevels.warn)

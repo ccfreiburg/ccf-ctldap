@@ -24,14 +24,25 @@ exports.init = (sitename, rootobjects, admin, password, ctAuthenticate) => {
   return {
     getGroups: () => ldapcache[sitename].groups.attributes.elements,
     getUsers: () => ldapcache[sitename].users.attributes.elements,
+    setData: (users, groups) => addData(sitename,users,groups),
     getGlobals: () => getGlobals(sitename), 
     checkAuthentication: async (user, password) => await checkPassword(sitename, user, password)
   }
 }
 
-exports.addData = (sitename, users, groups) => {
+addData = (sitename, users, groups) => {
   ldapcache[sitename].users.attributes.elements = users
   ldapcache[sitename].groups.attributes.elements = groups
+}
+
+exports.getUserById = (sitename,id) => {
+  const users = ldapcache[sitename].users.attributes.elements
+  const user = users.find((u)=>u.attributes.id==id)
+  return user;
+}
+exports.getGroupById = (sitename,id) => {
+  const group = ldapcache[sitename].groups.attributes.elements.find((g)=>g.attributes.id==id)
+  return group
 }
 
 const getGlobals = (sitename) => {
