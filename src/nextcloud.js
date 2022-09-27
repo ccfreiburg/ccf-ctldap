@@ -16,29 +16,32 @@ exports.getNextcloudMappingTables = (churchToolsData, dc) => {
       "'),";
   });
   insertSql = insertSql.slice(0, -1) + ';';
+
+  //INSERT INTO `oc_ldap_group_mapping` (`ldap_dn`, `owncloud_name`, `directory_uuid`) VALUES ('cn=admin,ou=groups,dc=ccfreiburg,dc=de', 'admin', 'admingruop0');
   console.log(insertSql);
 }
 
-exports.getNextcloudLdapConfig = (ldap, configNo, ncAccessObjClass ,externalLdapIp) => {
+exports.getNextcloudLdapConfig = (config, ncAccessObjClass ,externalLdapIp) => {
   const ldapip = externalLdapIp ? externalLdapIp : '127.0.0.1';
-  const port = ldap.port;
-  const Orga = ldap.dc;
+  const port = config.server.port;
+  const site = config.sites.ccf;
+  const Orga = site.ldap.dc;
   const Group = 'ou=' + c.LDAP_OU_GROUPS + ',';
   const Users = 'ou=' + c.LDAP_OU_USERS + ',';
   const ncOC = (ncAccessObjClass && ncAccessObjClass.length>1?ncAccessObjClass:c.LDAP_OBJCLASS_USER)
 
-  const set = configNo;
+  const set = "s01";
   function getLdapAppSetting(key, val) {
     return "('user_ldap', '" + set + key + "', '" + val + "'),";
   }
   
   settingSql =
     'REPLACE INTO `oc_appconfig` VALUES ' +
-    getLdapAppSetting(
+    getLdapAppSetting( 
       'ldap_dn',
-      'cn=' + ldap.admincn + ',' + Users + Orga
+      'cn=' + site.ldap.admincn + ',' + Orga
     ) +
-    getLdapAppSetting('ldap_agent_password', ldap.password) +
+    getLdapAppSetting('ldap_agent_password', site.ldap.password) +
     getLdapAppSetting('ldap_host', ldapip) +
     getLdapAppSetting('ldap_port', port) +
     getLdapAppSetting('ldap_base', Orga) +
@@ -75,7 +78,7 @@ exports.getNextcloudLdapConfig = (ldap, configNo, ncAccessObjClass ,externalLdap
     getLdapAppSetting(
       's01',
       'ldap_login_filter',
-      '(&(&(objectclass=' + ncOC + '))(|(uid=%uid)))'
+      '(&(objectclass=' + ncOC + ')(uid=%uid))'
     ) +
     getLdapAppSetting('ldap_loginfilter_attributes', 'uid') +
     getLdapAppSetting('ldap_user_filter_mode', '1') +

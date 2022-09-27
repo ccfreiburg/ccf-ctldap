@@ -114,7 +114,7 @@ const loginfunc = async (conn, user, password) => {
   const { data } = await ctapi.request(request, successfunc)
   conn.csrfToken = await getCsrfToken(conn.baseurl, conn.cookie);
   conn.loginPromise = null;
-  log.info(conn.baseurl + " - CT API login completed");
+  log.debug(conn.baseurl + " - CT API login completed");
   return data;
 }
 

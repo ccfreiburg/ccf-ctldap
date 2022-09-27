@@ -86,14 +86,14 @@ exports.getAdmin = (cn, dc) => {
       id: 0,
       uid: 'Admin',
       bbbrole: 'admin',
-      entryUUID: '',
+      entryUUID: 'admin0',
       givenname: 'Administrator',
-      objectclass: [
+      objectClass: [
         c.LDAP_OBJCLASS_USER,
         'simpleSecurityObject',
         'organizationalRole',
       ],
-      memberof: []
+      memberOf: []
     },
   };
 };
@@ -106,7 +106,7 @@ exports.getAdminGroup = (cn, dc) => {
       cn: cn,
       id: 0,
       displayname: "Administrators",
-      entryUUID: '',
+      entryUUID: 'admingroup0',
       objectClass: [c.LDAP_OBJCLASS_GROUP],
       uniqueMember: [ ]
     }
@@ -155,8 +155,8 @@ exports.transformUser = (ctpserson, attributes, dc) => {
       sn: ctpserson.lastName,
       email: this.lowercase(ctpserson.email),
       mail: this.lowercase(ctpserson.email),
-      objectclass: [c.LDAP_OBJCLASS_USER,"person","organizationalPerson","user"],
-      memberof: [],
+      objectClass: [c.LDAP_OBJCLASS_USER,"person","organizationalPerson","user"],
+      memberOf: [],
     },
   };
   this.addConfigAttributes(result, attributes);
@@ -176,8 +176,8 @@ exports.trsansformGroup = (ctgroup, grtransform, dc) => {
       id: ctgroup.id,
       guid: ctgroup.guid,
       nsuniqueid: 'g' + ctgroup.id,
-      objectclass: [c.LDAP_OBJCLASS_GROUP],
-      uniquemember: [],
+      objectClass: [c.LDAP_OBJCLASS_GROUP],
+      uniqueMember: [],
     },
   };
 };
@@ -187,11 +187,11 @@ exports.addUsersAdminGroup = (users, ldapadmin, ids, cn, dc) => {
   users.forEach( (user) => {
     if (ids.includes(user.attributes.id)) {
       admingroup.attributes.uniqueMember.push(user.dn)
-      user.attributes.memberof.push(admingroup.dn)
+      user.attributes.memberOf.push(admingroup.dn)
     }
   })  
   admingroup.attributes.uniqueMember.push(ldapadmin.dn)
-  ldapadmin.attributes.memberof.push(admingroup.dn)
+  ldapadmin.attributes.memberOf.push(admingroup.dn)
   return admingroup;
 }
 
@@ -210,10 +210,10 @@ exports.connectUsersAndGroups = (
       .forEach((memberhip) => {
         const user = users.find((u) => u.attributes.id == memberhip.personId);
         if (user) {
-          user.attributes.memberof.push(group.dn);
+          user.attributes.memberOf.push(group.dn);
           if (objClassGrpMem && objClassGrpMem.hasOwnProperty('objectClass'))
-            user.attributes.objectclass.push(objClassGrpMem.objectClass);
-          group.attributes.uniquemember.push(user.dn);
+            user.attributes.objectClass.push(objClassGrpMem.objectClass);
+          group.attributes.uniqueMember.push(user.dn);
         }
       });
   });
@@ -238,7 +238,7 @@ exports.getLdapUsers = (ctpersons, attributes, dc) => {
   return users;
 };
 
-exports.getLdapDataFromChurchTools = (site, churchtoolsdata) => {
+exports.getLdapData = (site, churchtoolsdata, adminuser) => {
   const groups = this.getLdapGroupsWithoutMembers(
     churchtoolsdata.groups,
     site.tranformedGroups,
@@ -255,6 +255,9 @@ exports.getLdapDataFromChurchTools = (site, churchtoolsdata) => {
     users,
     site.tranformedGroups
   );
+
+  groups.push(this.addUsersAdminGroup(users, adminuser ,site.adminGroup.members,site.adminGroup.cn,site.ldap.dc))
+
   return {
     users,
     groups,

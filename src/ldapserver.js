@@ -9,6 +9,14 @@ const normalize = (astring) => {
   const str = astring
   return str.replaceAll(", ",",")
 }
+stopServer = () => {
+  ldapjs.close()
+}
+
+startUp = (server, ldapjs, cb) => {
+  var port = parseInt(server.port)
+  ldapjs.listen(port, server.ip, cb(server.ip,port))
+};
 
 exports.getLdapServer = (server) => {
   if (server.crt && server.key) {
@@ -110,6 +118,7 @@ initSite = (site, cacheFunctions, ldapjs) => {
   }
 
   async function authenticate (req, _res, next) {
+    try {
     var valid = await cacheFunctions.checkAuthentication(
       req.dn.toString(),
       req.credentials
@@ -122,6 +131,10 @@ initSite = (site, cacheFunctions, ldapjs) => {
       sitename,
       'Authentication successful for ' + req.dn.toString()
     );
+    } catch(err) {
+      log.debug(err)
+      return next(new ldap.InvalidCredentialsError());
+    }
     return next();
   };
 
@@ -233,10 +246,3 @@ initSite = (site, cacheFunctions, ldapjs) => {
   log.debugSite(sitename,"Routes registered")
   };
 
-stopServer = () => {
-  ldapjs.close()
-}
-
-startUp = (server, ldapjs, cb) => {
-  ldapjs.listen(parseInt(server.port), server.ip, cb)
-};

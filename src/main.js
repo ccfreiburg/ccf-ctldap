@@ -1,4 +1,5 @@
 const log = require('./logging')
+const YAML = require('yamljs');
 const ctservice = require('./ctservice')
 const transform = require('./transform')
 const ldapcache = require('./ldapcache')
@@ -18,16 +19,18 @@ const initCache = async (site, getChurchToolsDataFunc, authChurchToolsFunc) => {
     authChurchToolsFunc
     )
   const churchtoolsdata = await getChurchToolsDataFunc(site.selectionGroupIds, site.tranformedGroups, site.site)
-  const {users,groups} = transform.getLdapDataFromChurchTools(site, churchtoolsdata)
-
-  groups.push(transform.addUsersAdminGroup(users, adminuser ,site.adminGroup.members,site.adminGroup.cn,site.ldap.dc))
-    
+  const {users,groups} = transform.getLdapData(site, churchtoolsdata, adminuser)
+   
   ldapcache.addData(site.site.name,users,groups)
   return siteCacheFunctions
 }
 
 const updateLdapServerData = (siteldap) => {
   // Todo implement an update strategy
+}
+
+exports.getConfig = (file) => {
+  return YAML.load(file)
 }
 
 exports.ldapjs = {}
@@ -45,12 +48,16 @@ exports.start = async (config, getChurchToolsDataFunc, authWithChurchToolsFunc, 
 
   log.debug("Done initializing data")
   this.ldapjs.startUp(callback)
-  return () => this.ldapjs.startUp(callback)
+  return (cb) => {
+    this.ldapjs.stopServer();
+    this.ldapjs.startUp(cb)
+  }
 }
 
 exports.snapshot = async (site) => {
   const data = await ctservice.getChurchToolsData(site.selectionGroupIds, site.tranformedGroups, site.site)
-  const ldap = transform.getLdapDataFromChurchTools(site, data)
+  const adminuser = transform.getAdmin(site.ldap.admincn, site.ldap.dc)
+  const ldap = transform.getLdapData(site, data, adminuser)
   return {
     data,
     ldap

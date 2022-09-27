@@ -108,9 +108,13 @@ exports.getChurchToolsData = async (selectionGroupIds, tranformedGroups, site) =
       allGoupsIds.push(element.gid);
   });
   
+  log.info("Get Persons from ChurchTools")
   const ctPersonIds = await this.getPersonsInGroups(selectionGroupIds, site);
+  log.info("Get Groups from ChurchTools")
   const ctGroups = await this.getGroups(allGoupsIds, site);
+  log.info("Get Person Details from ChurchTools")
   const ctPersons = await this.getPersonsForIds(ctPersonIds, site);
+  log.info("Get Group Memberships from ChurchTools")
   const ctGroupMembership = await this.getGroupMemberships(allGoupsIds, site);
 
   return {

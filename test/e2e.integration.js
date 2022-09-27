@@ -52,7 +52,8 @@ describe("LDAP Client Server E2E Tests (e2e.integration)", () => {
 
     await main.start(config,
       async () => data,                                // data func mock
-      (site) => async (u,p) => { return p==="alex" })  // pasword check mock
+      (site) => async (u,p) => { return p==="alex" },  // pasword check mock
+      (ip,port) => {});
     client = ldap.createClient({
       url: ['ldap://127.0.0.1:1389']
     });
@@ -183,6 +184,15 @@ describe("LDAP Client Server E2E Tests (e2e.integration)", () => {
         expect(entries).to.have.length.above(13)        
       }, 
       done, { scope:"sub", filter: "(&(objectclass=nextclouduser)(displayname=*))" })
+  })
+
+  it("Get dc - query admin group", (done) => {
+    boundSearchWrapper(
+      "cn=admin,ou=groups,dc=ccfreiburg,dc=de", 
+      (entries) => {
+        expect(entries).to.have.length(1)        
+      }, 
+      done, { scope:"sub", filter: "(objectclass=group)" })
   })
 
   xit("Get dc - query throws", (done) => {

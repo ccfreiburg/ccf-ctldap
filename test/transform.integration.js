@@ -9,7 +9,9 @@ const ldap = require("../production/ldap.json");
 
 describe("Transorm Production data to Ldap", () => {
   it("Equals Snapshot", () => {
-    const ldapData = transform.getLdapDataFromChurchTools(site.sites.ccf, ctdata)
+    const ldapconf = site.sites.ccf.ldap
+    const adminuser = transform.getAdmin(ldapconf.admincn, ldapconf.dc)
+    const ldapData = transform.getLdapData(site.sites.ccf, ctdata, adminuser)
     expect(ldapData).to.deep.equalInAnyOrder(ldap);
   })
 });

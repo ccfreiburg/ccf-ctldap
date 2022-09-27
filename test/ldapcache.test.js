@@ -64,13 +64,14 @@ describe("LDAP Cache", () => {
     actual = await cachefunct.checkAuthentication(myAdmin, password)
     expect(actual).to.equal(false)
   });
-  it("checkAuthentication - does not block admin 4 trys even when password is then right", async () => { 
+  it("checkAuthentication - does not block admin 4 trys when password is then right", async () => { 
     const myAdmin = "MyAdmin"
     const password = "pass1234"
     var wasCalled = false
     const ctAuthMock = () => {
       wasCalled = true
     }
+    cache.getUserPropertyForAuth = (u,s) => u
     const cachefunct = cache.init("vip", {}, { dn: myAdmin }, password, ctAuthMock )
     var actual = false
     var count = 0;
@@ -79,8 +80,8 @@ describe("LDAP Cache", () => {
       count ++;
       expect(actual).to.equal(false)
     }
-    expect(wasCalled).to.equal(false)
     actual = await cachefunct.checkAuthentication(myAdmin, password)
+    expect(wasCalled).to.equal(false)
     expect(actual).to.equal(true)
   });
   it("checkAuthentication - for non admin calls handed function", async () => { 
@@ -105,6 +106,7 @@ describe("LDAP Cache", () => {
       count++
       return false
     }
+    cache.getUserPropertyForAuth = (u,s) => u
     const cachefunct = cache.init("vip", {}, { dn: "myAdmin" }, "", ctAuthMock )
     var actual = await cachefunct.checkAuthentication(user, " adfsas")
     var i = 0

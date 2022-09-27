@@ -94,31 +94,31 @@ describe("Transorm API results to Ldap", () => {
   });
   it("connectUsersAndGroups adds group to person and person to group", () => {
     const membership = { personId: 12, groupId: 692 }
-    const person = { dn: "ab", attributes: { id: 12, memberof: [] } }
-    const group = { dn: "cd", attributes: { id: 692, uniquemember: [] } }
+    const person = { dn: "ab", attributes: { id: 12, memberOf: [] } }
+    const group = { dn: "cd", attributes: { id: 692, uniqueMember: [] } }
     transform.connectUsersAndGroups([membership], [group], [person], [])
-    expect(person.attributes.memberof).to.include("cd")
-    expect(group.attributes.uniquemember).to.include("ab")
+    expect(person.attributes.memberOf).to.include("cd")
+    expect(group.attributes.uniqueMember).to.include("ab")
   })
   it("connectUsersAndGroups adds objectClass to user for configured group", () => {
     const membership = { personId: 12, groupId: 692 }
-    const person = { dn: "ab", attributes: { id: 12, objectclass: [], memberof: [] } }
-    const group = { dn: "cd", attributes: { id: 692, uniquemember: [] } }
+    const person = { dn: "ab", attributes: { id: 12, objectClass: [], memberOf: [] } }
+    const group = { dn: "cd", attributes: { id: 692, uniqueMember: [] } }
     const grptransf = { gid: 692, objectClass: "ef" }
     transform.connectUsersAndGroups([membership], [group], [person], [grptransf])
-    expect(person.attributes.objectclass).to.include("ef")
+    expect(person.attributes.objectClass).to.include("ef")
   })
   it("addUsersAdminGroup - adds Ldap admin user", () => {
     const users = []
-    const ldapad = { dn: "hey", attributes: {memberof: []}}
+    const ldapad = { dn: "hey", attributes: {memberOf: []}}
     const actual = transform.addUsersAdminGroup(users,ldapad,[4],"admin","dcdc")
     expect(actual.dn).to.equal("cn=admin,ou=groups,dcdc")
     expect(actual.attributes.uniqueMember).to.have.length(1)
     expect(actual.attributes.uniqueMember[0]).to.equal(ldapad.dn)
   })
   it("addUsersAdminGroup - adds users with matching ids", () => {
-    const users = [{ dn: "hho", attributes: { id: 4, memberof: []}}]
-    const ldapad = { dn: "hey", attributes: {memberof: []}}
+    const users = [{ dn: "hho", attributes: { id: 4, memberOf: []}}]
+    const ldapad = { dn: "hey", attributes: {memberOf: []}}
     const actual = transform.addUsersAdminGroup(users,ldapad,[4],"admin","dcdc")
     expect(actual.dn).to.equal("cn=admin,ou=groups,dcdc")
     expect(actual.attributes.uniqueMember).to.have.length(2)

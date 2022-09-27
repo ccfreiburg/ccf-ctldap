@@ -1,4 +1,5 @@
 const c = require('./constants')
+const log = require('./logging')
 var ldapEsc = require('ldap-escape');
 const { use } = require('chai');
 
@@ -52,6 +53,14 @@ const getGlobals = (sitename) => {
   }
 }
 
+exports.getUserPropertyForAuth = (userdn, sitename) => {
+  const user = ldapcache[sitename].users.attributes.elements.find((u)=>u.dn===userdn)
+  log.debugSite(sitename,JSON.stringify(user))
+  if (!user)
+    return null
+  return user.attributes.entryUUID
+}
+
 checkPassword = async (sitename, userDn, password) => {
     const sitecache = ldapcache[sitename]    
     const userdn = normalize(userDn)
@@ -63,7 +72,8 @@ checkPassword = async (sitename, userDn, password) => {
       valid = sitecache.passwords.get(userdn) === password
     } 
     if (!valid && userdn!=sitecache.admin.dn) {
-      valid = await sitecache.ctAuthenticate(userdn, password)
+      const login = this.getUserPropertyForAuth(userdn, sitename)
+      valid = (login?await sitecache.ctAuthenticate(login, password):false)
       if (valid)
         sitecache.passwords.set(userdn,password)
     }
