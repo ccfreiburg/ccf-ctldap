@@ -2,6 +2,7 @@ var ldap = require('ldapjs');
 var parseDN = require('ldapjs').parseDN;
 const c = require('./constants');
 const log = require('./logging');
+const fs = require('fs');
 
 log.loglevel = log.loglevels.debug;
 
@@ -19,8 +20,8 @@ startUp = (server, ldapjs, cb) => {
 };
 
 exports.getLdapServer = (server) => {
-  if (server.crt && server.key) {
-    var ldapCert = fs.readFileSync(server.crt, { encoding: 'utf8' });
+  if (server.cert && server.key) {
+    var ldapCert = fs.readFileSync(server.cert, { encoding: 'utf8' });
     var ldapKey = fs.readFileSync(server.key, { encoding: 'utf8' });
     ldapjs = ldap.createServer({
       log: log.logger,
