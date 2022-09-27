@@ -23,6 +23,7 @@ async function sanpshot() {
 }
 
 var restart = () => {};
+
 var initialized = false;
 
 startedServer = (ip,port) => {
@@ -60,23 +61,26 @@ run = async () => {
     nc.getNextcloudMappingTables(data, testconfig.sites[sitename].ldap.dc);
   } else if (process.argv.includes('--testdata')) {
     const testconfig = this.getTestConfig()
-    restart = await main.start(
+    const start = await main.start(
       testconfig,
       async () => require('./production/ctdata.json'),
       (site) => async (user, password) => password === 'alex',
       startedServer
     );
+    restart = start.restart
   } else if (process.argv.includes('--testsnapshot')) {
     sanpshot();
   } else {
-    log.logger.level = 'debug'
+    log.logger.level = 'info'
     const config = main.getConfig(c.CONFIG_FILE)
-    restart = await main.start(
+    start = await main.start(
       config,
       ctservice.getChurchToolsData,
       ctservice.authWithChurchTools,
       startedServer
     );
+    restart = start.restart
+    setInterval(() => main.update(start.updaters), config.server.updateinterval*1000)
   }
 };
 

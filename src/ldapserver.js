@@ -130,19 +130,21 @@ initSite = (site, cacheFunctions, ldapjs) => {
         req.dn.toString(),
         req.credentials
       );
-      if (!valid) {
-        log.errorSite(sitename, 'Authentication error');
-        return next(new ldap.InvalidCredentialsError());
+      if (valid) {
+        log.infoSite(
+            sitename,
+            'Authentication successful for ' + req.dn.toString()
+          );
+        return next();
       }
-      log.debugSite(
-        sitename,
-        'Authentication successful for ' + req.dn.toString()
-      );
     } catch (err) {
-      log.debug(err);
-      return next(new ldap.InvalidCredentialsError());
+      log.debug(err)
     }
-    return next();
+    log.infoSite(
+      sitename,
+      'Authentication error ' + req.dn.toString()
+    );
+return next(new ldap.InvalidCredentialsError());
   }
 
   log.debugSite(sitename, 'Resgistering routes');
