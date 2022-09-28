@@ -1,4 +1,4 @@
-# Church Tools Wrapper ccf-ctldap
+# Church Tools LDAP Wrapper ccf-ctldap
  .. is a Church Tools Ldap Proxy and using many ideas and loc from the  https://github.com/milux/ctldap.git repository. Goal of the effort was to 
    - refactor code so it is
      - it is unit testable
