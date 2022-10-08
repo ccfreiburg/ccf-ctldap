@@ -75,6 +75,8 @@ run = async () => {
   } else {
     log.logger = pino({ level: 'info', transport: { target: 'pino-pretty' } })
     const config = main.getConfig(c.CONFIG_FILE)
+    if (config.server.loglevel)
+      log.logger.level = config.server.loglevel
     start = await main.start(
       config,
       ctservice.getChurchToolsData,
