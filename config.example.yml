@@ -1,40 +1,40 @@
 server:
   port: 1389
   ip: 0.0.0.0
-  updateinterval: 600  // intervall in seconds 
+  updateinterval: 600 # interval in seconds
   cert: certs/ldap.crt
   key: certs/ldap.key
 sites:
   ccf:
     site:
       name: sitename 
-      user: username  // User needs rights to the api in CT
+      user: username # user needs API permissions in ChurchTools
       password: secret1
       url: https://sitename.church.tools/
     ldap:
       o: Organisation Name
-      dc: dc=myorg,dc=tld   // domain components
+      dc: dc=myorg,dc=tld # domain components
       admincn: admin
       password: secret2
-   attributes:  // fields to add to user 
+    attributes: # fields to add to user
       - name: key1
         default: defaultvalue1
-        replacements:   // add value to user with id 
+        replacements: # add value to user with id
           - id: id
             value: extra
       - name: key2
         default: defaultvalue2
     adminGroup: 
-      cn: "admin" // 
-      members:    // personid s of users to put in admin group
+      cn: "admin"
+      members: # person ID of users to put in admin group
         - id 
-    selectionGroupIds:  // ChurchTools Group Ids - only members of these groups will be served by ldap
+    selectionGroupIds: # ChurchTools group IDs - only members of these groups will be served by LDAP
       - gid 
       - gid
-    tranformedGroups:   // ChurchTools Group Ids with the group name which will be served by Ldap
+    tranformedGroups: # ChurchTools group IDs with the group name which will be served by LDAP
       - gid: gid
         name: Groupname
-        objectClass: usrObjClass  // additionally set objectClass of User to that value if in group
+        objectClass: usrObjClass # additionally set objectClass of user to that value if in group
       - gid: gid
         name: Groupname
-// further ChurchTools sites to serve - following the same schema above
+  # further ChurchTools sites to serve - following the same schema as above
