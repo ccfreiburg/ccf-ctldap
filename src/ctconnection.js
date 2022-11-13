@@ -1,17 +1,16 @@
-const log = require("./logging");
-const c = require("./constants");
-const ctapi = require("./ctapi");
-const axiosReal = require("axios").default;
+const log = require('./logging');
+const c = require('./constants');
+const ctapi = require('./ctapi');
+const axiosReal = require('axios').default;
 
-
-var connectionPool = {};
+const connectionPool = {};
 
 exports.getEmptyConnection = (sitename, baseurl) => {
-  var connection = {};
+  const connection = {};
   connection.name = sitename;
-  connection.baseurl = (baseurl ? baseurl : "");
-  connection.cookie = "";
-  connection.csrfToken = "";
+  connection.baseurl = (baseurl || '');
+  connection.cookie = '';
+  connection.csrfToken = '';
   connection.loginPromise = null;
   connection.loginErrorCount = 0;
   connection.connected = false;
@@ -33,7 +32,7 @@ exports.isConnected = (sitename) => {
 };
 
 exports.disconnect = (connection) => {
-  connection.csrfToken = ""
+  connection.csrfToken = '';
 };
 
 /**
@@ -41,120 +40,114 @@ exports.disconnect = (connection) => {
  * If a pending login promise already exists, it is returned right away.
  */
 exports.login = async (site) => {
-
-  var conn = this.getConnection(site);
+  const conn = this.getConnection(site);
   if (conn.loginPromise) return Promise.resolve(conn.loginPromise);
 
-  if (conn.loginErrorCount >= 3)
-    throw ctapi.ChurchToolsFatalError("Too many failed logins in a row");
+  if (conn.loginErrorCount >= 3) throw ctapi.ChurchToolsFatalError('Too many failed logins in a row');
 
-  var result = {}
+  let result = {};
   try {
-    conn.loginPromise = loginPromise(conn, site.user, site.password)
+    conn.loginPromise = loginPromise(conn, site.user, site.password);
     result = await conn.loginPromise;
   } catch (err) {
-    result = err.response
+    result = err.response;
   }
   conn.loginPromise = null;
 
-  return ctapi.result(result,
+  return ctapi.result(
+    result,
     () => conn.loginErrorCount = 0,
-    () => conn.loginErrorCount = conn.loginErrorCount + 1)
+    () => conn.loginErrorCount += 1,
+  );
 };
 
 exports.infoReal = async (baseurl) => {
   const request = {
-    method: "get",
-    url: baseurl + c.API_SLUG + c.INFO_AP
+    method: 'get',
+    url: baseurl + c.API_SLUG + c.INFO_AP,
   };
-  return await ctapi.request(request)
+  return await ctapi.request(request);
 };
-
 
 exports.getCsrfTokenReal = async (baseurl, cookie) => {
   const request = {
-    method: "get",
+    method: 'get',
     url: baseurl + c.API_SLUG + c.CSRF_AP,
     headers: {
       Cookie: cookie,
     },
     json: true,
-  }
-  return await ctapi.request(request)
+  };
+  return await ctapi.request(request);
 };
 
-getCookie = (result) => {
-  return result.headers["set-cookie"][0];
+getCookie = (result) => result.headers['set-cookie'][0];
+
+getLoginRequest = (baseurl, user, password) => ({
+  method: 'post',
+  url: baseurl + c.API_SLUG + c.LOGIN_AP,
+  data: {
+    username: user,
+    rememberMe: false,
+    password,
+  },
+});
+
+exports.authenticate = async (baseurl, user, password) => {
+  log.debug(`Auth on ${baseurl} for ${user}`);
+  const { data } = await ctapi.request(getLoginRequest(baseurl, user, password));
+  return (data.status == 'success');
 };
-
-getLoginRequest = (baseurl, user, password) => {
-  return {
-    method: "post",
-    url: baseurl + c.API_SLUG + c.LOGIN_AP,
-    data: {
-      "username": user,
-      "rememberMe": false,
-      "password": password
-    }
-  }
-}
-
-exports.authenticate = async ( baseurl, user, password ) => {
-  log.debug("Auth on "+ baseurl + " for " + user)
-  const { data } = await ctapi.request(getLoginRequest( baseurl, user, password ))
-  return (data.status == "success");
-}
 
 const loginfunc = async (conn, user, password) => {
-  conn.csrfToken = "";
-  const request = getLoginRequest(conn.baseurl, user, password)
+  conn.csrfToken = '';
+  const request = getLoginRequest(conn.baseurl, user, password);
   const successfunc = (result) => {
     conn.cookie = getCookie(result);
-  }
-  const { data } = await ctapi.request(request, successfunc)
+  };
+  const { data } = await ctapi.request(request, successfunc);
   conn.csrfToken = await getCsrfToken(conn.baseurl, conn.cookie);
   conn.loginPromise = null;
-  log.debug(conn.baseurl + " - CT API login completed");
+  log.debug(`${conn.baseurl} - CT API login completed`);
   return data;
-}
+};
 
 exports.loginPromiseReal = (conn, user, password) => {
-  conn.loginPromise = loginfunc(conn, user, password)
+  conn.loginPromise = loginfunc(conn, user, password);
   return conn.loginPromise;
 };
 
 exports.getPromiseReal = async (url, site) => {
   const conn = this.getConnection(site);
-  var retryWithAuth = true
-  var result = {}
+  let retryWithAuth = true;
+  let result = {};
   while (retryWithAuth) {
-    retryWithAuth = false
+    retryWithAuth = false;
     try {
       if (!this.isConnected(site.name)) {
-        log.debug("Try again to log in")
-        await this.login(site)
+        log.debug('Try again to log in');
+        await this.login(site);
       }
       const reqest = {
-        url: url,
+        url,
         headers: {
-          'Cookie': conn.cookie,
-          'CSRF-Token': (conn.csrftoken ? conn.csrftoken : "")
+          Cookie: conn.cookie,
+          'CSRF-Token': (conn.csrftoken ? conn.csrftoken : ''),
         },
         json: true,
-      }
-      log.debug(JSON.stringify(reqest))
-      result = await axios(reqest)
-      return ctapi.result(result)
+      };
+      log.debug(JSON.stringify(reqest));
+      result = await axios(reqest);
+      return ctapi.result(result);
     } catch (err) {
-      if (err.name === "ChurchToolsError" || (err.response && err.response.status == 401)) {
-        this.disconnect(conn)
+      if (err.name === 'ChurchToolsError' || (err.response && err.response.status == 401)) {
+        this.disconnect(conn);
         retryWithAuth = true;
-      } else
-        throw err
+      } else throw err;
     }
   }
-  return result
-}
+  return result;
+};
 
 exports.get = (url, site) => getPromise(url, site);
 
@@ -173,4 +166,4 @@ exports.resetMocks = () => {
   getPromise = this.getPromiseReal;
   loginPromise = this.loginPromiseReal;
   getCsrfToken = this.getCsrfTokenReal;
-}
+};

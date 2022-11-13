@@ -1,12 +1,12 @@
+const fs = require('fs');
+const { argv } = require('process');
+const pino = require('pino');
+const pretty = require('pino-pretty');
 const c = require('./src/constants');
 const main = require('./src/main');
 const ctservice = require('./src/ctservice');
 const log = require('./src/logging');
 const nc = require('./src/nextcloud');
-const fs = require('fs');
-const { argv } = require('process');
-const pino = require('pino')
-const pretty = require('pino-pretty')
 
 function write(name, data) {
   try {
@@ -24,12 +24,12 @@ async function sanpshot() {
   write('ldap.json', JSON.stringify(result.ldap));
 }
 
-var restart = () => {};
+let restart = () => {};
 
-var initialized = false;
+let initialized = false;
 
-startedServer = (ip,port) => {
-  log.info('LDAP listening @ ' + ip + ":"+ port);
+startedServer = (ip, port) => {
+  log.info(`LDAP listening @ ${ip}:${port}`);
   initialized = true;
 };
 process.on('uncaughtException', (err) => {
@@ -40,51 +40,47 @@ process.on('uncaughtException', (err) => {
   }
 });
 
-exports.getTestConfig = () => {
-    return require('./production/config.json');
-}
+exports.getTestConfig = () => require('./production/config.json');
 
 run = async () => {
   if (process.argv.includes('--configsql')) {
-    var vcount = process.argv.indexOf('--configsql')
-    if (argv.length < vcount+2) {
-        log.error("Parameters missing --configsql <s01> <ccf> <nextCloudUser>")
-        process.exit()
-    }        
-    var set = process.argv[vcount+1]
-    var sitename = process.argv[vcount+2]
-    var objectclass = c.LDAP_OBJCLASS_USER
-    if (process.argv.length > vcount + 2)
-        objectclass = process.argv[vcount+3]
+    const vcount = process.argv.indexOf('--configsql');
+    if (argv.length < vcount + 2) {
+      log.error('Parameters missing --configsql <s01> <ccf> <nextCloudUser>');
+      process.exit();
+    }
+    const set = process.argv[vcount + 1];
+    const sitename = process.argv[vcount + 2];
+    let objectclass = c.LDAP_OBJCLASS_USER;
+    if (process.argv.length > vcount + 2) objectclass = process.argv[vcount + 3];
     const data = require('./production/ldap.json');
     log.logger.level = 'silent';
-    const testconfig = this.getTestConfig()
+    const testconfig = this.getTestConfig();
     nc.getNextcloudLdapConfig(testconfig, sitename, set, objectclass);
     nc.getNextcloudMappingTables(data, testconfig.sites[sitename].ldap.dc);
   } else if (process.argv.includes('--testdata')) {
-    const testconfig = this.getTestConfig()
+    const testconfig = this.getTestConfig();
     const start = await main.start(
       testconfig,
       async () => require('./production/ctdata.json'),
       (site) => async (user, password) => password === 'alex',
-      startedServer
+      startedServer,
     );
-    restart = start.restart
+    restart = start.restart;
   } else if (process.argv.includes('--testsnapshot')) {
     sanpshot();
   } else {
-    log.logger = pino({ level: 'info', transport: { target: 'pino-pretty' } })
-    const config = main.getConfig(c.CONFIG_FILE)
-    if (config.server.loglevel)
-      log.logger.level = config.server.loglevel
+    log.logger = pino({ level: 'info', transport: { target: 'pino-pretty' } });
+    const config = main.getConfig(c.CONFIG_FILE);
+    if (config.server.loglevel) log.logger.level = config.server.loglevel;
     start = await main.start(
       config,
       ctservice.getChurchToolsData,
       ctservice.authWithChurchTools,
-      startedServer
+      startedServer,
     );
-    restart = start.restart
-    setInterval(() => main.update(start.updaters), config.server.updateinterval*1000)
+    restart = start.restart;
+    setInterval(() => main.update(start.updaters), config.server.updateinterval * 1000);
   }
 };
 

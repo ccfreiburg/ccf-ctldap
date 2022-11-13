@@ -1,5 +1,5 @@
-const log = require('./logging');
 const YAML = require('yamljs');
+const log = require('./logging');
 const ctservice = require('./ctservice');
 const transform = require('./transform');
 const ldapcache = require('./ldapcache');
@@ -15,17 +15,17 @@ const initCache = async (site, getChurchToolsDataFunc, authChurchToolsFunc) => {
     transform.getRootObj(site.ldap.dc, site.ldap.admin, site.ldap.o),
     adminuser,
     site.ldap.password,
-    authChurchToolsFunc
+    authChurchToolsFunc,
   );
   const churchtoolsdata = await getChurchToolsDataFunc(
     site.selectionGroupIds,
     site.tranformedGroups,
-    site.site
+    site.site,
   );
   const { users, groups } = transform.getLdapData(
     site,
     churchtoolsdata,
-    adminuser
+    adminuser,
   );
 
   siteCacheFunctions.setData(users, groups);
@@ -35,25 +35,21 @@ const initCache = async (site, getChurchToolsDataFunc, authChurchToolsFunc) => {
 const updateSiteData = (
   site,
   getChurchToolsDataFunc,
-  siteCacheFunctionsSetData
-) => {
-  return new Promise(async (resolve) => {
-    log.infoSite(site.site, 'Updating data from Church Tools');
-    const data = await getChurchToolsDataFunc(
-      site.selectionGroupIds,
-      site.tranformedGroups,
-      site.site
-    );
-    const adminuser = transform.getAdmin(site.ldap.admincn, site.ldap.dc);
-    const ldap = transform.getLdapData(site, data, adminuser);
-    siteCacheFunctionsSetData(ldap.users, ldap.groups);
-    resolve();
-  });
-};
+  siteCacheFunctionsSetData,
+) => new Promise(async (resolve) => {
+  log.infoSite(site.site, 'Updating data from Church Tools');
+  const data = await getChurchToolsDataFunc(
+    site.selectionGroupIds,
+    site.tranformedGroups,
+    site.site,
+  );
+  const adminuser = transform.getAdmin(site.ldap.admincn, site.ldap.dc);
+  const ldap = transform.getLdapData(site, data, adminuser);
+  siteCacheFunctionsSetData(ldap.users, ldap.groups);
+  resolve();
+});
 
-exports.getConfig = (file) => {
-  return YAML.load(file);
-};
+exports.getConfig = (file) => YAML.load(file);
 
 exports.ldapjs = {};
 
@@ -61,7 +57,7 @@ exports.start = async (
   config,
   getChurchToolsDataFunc,
   authWithChurchToolsFunc,
-  callback
+  callback,
 ) => {
   log.info('Starting up CCF Ldap wrapper for ChurchTools ....');
   const updaters = new Map();
@@ -73,12 +69,12 @@ exports.start = async (
     const cacheFunctions = await initCache(
       site,
       getChurchToolsDataFunc,
-      authWithChurchToolsFunc(site)
+      authWithChurchToolsFunc(site),
     );
     await this.ldapjs.initSite(site, cacheFunctions);
     updaters.set(
       site.site.name,
-      () => updateSiteData(site, getChurchToolsDataFunc, cacheFunctions.setData)
+      () => updateSiteData(site, getChurchToolsDataFunc, cacheFunctions.setData),
     );
   }
   log.debug('Done initializing data');
@@ -103,7 +99,7 @@ exports.snapshot = async (site) => {
   const data = await ctservice.getChurchToolsData(
     site.selectionGroupIds,
     site.tranformedGroups,
-    site.site
+    site.site,
   );
   const adminuser = transform.getAdmin(site.ldap.admincn, site.ldap.dc);
   const ldap = transform.getLdapData(site, data, adminuser);
