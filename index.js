@@ -1,24 +1,26 @@
+/* eslint global-require: 0, import/no-dynamic-require: 0 */
+
 const fs = require('fs');
 const { argv } = require('process');
 const pino = require('pino');
-const pretty = require('pino-pretty');
 const c = require('./src/constants');
 const main = require('./src/main');
 const ctservice = require('./src/ctservice');
 const log = require('./src/logging');
 const nc = require('./src/nextcloud');
 
+const testDataPath = './testdata/';
+
 function write(name, data) {
   try {
     fs.writeFileSync(name, data);
   } catch (err) {
-    console.error(err);
+    log.error(err);
   }
 }
 
-async function sanpshot() {
-  const conf = require('./production/config.json');
-  const site = conf.sites.ccf;
+async function snapshot(config) {
+  const site = config.sites.ccf;
   const result = await main.snapshot(site);
   write('ctdata.json', JSON.stringify(result.data));
   write('ldap.json', JSON.stringify(result.ldap));
@@ -28,7 +30,7 @@ let restart = () => {};
 
 let initialized = false;
 
-startedServer = (ip, port) => {
+const startedServer = (ip, port) => {
   log.info(`LDAP listening @ ${ip}:${port}`);
   initialized = true;
 };
@@ -40,9 +42,7 @@ process.on('uncaughtException', (err) => {
   }
 });
 
-exports.getTestConfig = () => require('./production/config.json');
-
-run = async () => {
+(async () => {
   if (process.argv.includes('--configsql')) {
     const vcount = process.argv.indexOf('--configsql');
     if (argv.length < vcount + 2) {
@@ -53,27 +53,28 @@ run = async () => {
     const sitename = process.argv[vcount + 2];
     let objectclass = c.LDAP_OBJCLASS_USER;
     if (process.argv.length > vcount + 2) objectclass = process.argv[vcount + 3];
-    const data = require('./production/ldap.json');
+    const testconfig = require(`${testDataPath}config.json`);
+    const data = require(`${testDataPath}ldap.json`);
     log.logger.level = 'silent';
-    const testconfig = this.getTestConfig();
     nc.getNextcloudLdapConfig(testconfig, sitename, set, objectclass);
     nc.getNextcloudMappingTables(data, testconfig.sites[sitename].ldap.dc);
   } else if (process.argv.includes('--testdata')) {
-    const testconfig = this.getTestConfig();
+    const testconfig = require(`${testDataPath}config.json`);
     const start = await main.start(
       testconfig,
-      async () => require('./production/ctdata.json'),
-      (site) => async (user, password) => password === 'alex',
+      async () => require(`${testDataPath}ctdata.json`),
+      () => async (user, password) => password === 'alex',
       startedServer,
     );
     restart = start.restart;
   } else if (process.argv.includes('--testsnapshot')) {
-    sanpshot();
+    const testconfig = require(`${testDataPath}config.json`);
+    snapshot(testconfig);
   } else {
     log.logger = pino({ level: 'info', transport: { target: 'pino-pretty' } });
     const config = main.getConfig(c.CONFIG_FILE);
     if (config.server.loglevel) log.logger.level = config.server.loglevel;
-    start = await main.start(
+    const start = await main.start(
       config,
       ctservice.getChurchToolsData,
       ctservice.authWithChurchTools,
@@ -82,6 +83,4 @@ run = async () => {
     restart = start.restart;
     setInterval(() => main.update(start.updaters), config.server.updateinterval * 1000);
   }
-};
-
-run();
+})();
