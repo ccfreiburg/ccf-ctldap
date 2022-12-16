@@ -1,8 +1,8 @@
-var ldap = require('ldapjs');
-var parseDN = require('ldapjs').parseDN;
+const ldap = require('ldapjs');
+const { parseDN } = require('ldapjs');
+const fs = require('fs');
 const c = require('./constants');
 const log = require('./logging');
-const fs = require('fs');
 
 log.loglevel = log.loglevels.debug;
 
@@ -15,14 +15,14 @@ stopServer = () => {
 };
 
 startUp = (server, ldapjs, cb) => {
-  var port = parseInt(server.port);
+  const port = parseInt(server.port);
   ldapjs.listen(port, server.ip, cb(server.ip, port));
 };
 
 exports.getLdapServer = (server) => {
   if (server.cert && server.key) {
-    var ldapCert = fs.readFileSync(server.cert, { encoding: 'utf8' });
-    var ldapKey = fs.readFileSync(server.key, { encoding: 'utf8' });
+    const ldapCert = fs.readFileSync(server.cert, { encoding: 'utf8' });
+    const ldapKey = fs.readFileSync(server.key, { encoding: 'utf8' });
     ldapjs = ldap.createServer({
       log: log.logger,
       certificate: ldapCert,
@@ -43,7 +43,7 @@ exports.getLdapServer = (server) => {
 
 initSite = (site, cacheFunctions, ldapjs) => {
   const sitename = site.site.name;
-  const dc = site.ldap.dc;
+  const { dc } = site.ldap;
 
   function authorize(req, _res, next) {
     const adminDn = cacheFunctions.getGlobals().adminDn.dn;
@@ -58,9 +58,9 @@ initSite = (site, cacheFunctions, ldapjs) => {
     try {
       log.debugSite(
         sitename,
-        'SEARCH base object: ' + req.dn.toString() + ' scope: ' + req.scope
+        `SEARCH base object: ${req.dn.toString()} scope: ${req.scope}`,
       );
-      log.debugSite(sitename, 'Filter: ' + req.filter.toString());
+      log.debugSite(sitename, `Filter: ${req.filter.toString()}`);
     } catch (err) {
       log.debug(req);
       log.debug(err);
@@ -69,14 +69,14 @@ initSite = (site, cacheFunctions, ldapjs) => {
   }
 
   function sendUsers(req, res, next) {
-    var strDn = req.dn.toString();
+    const strDn = req.dn.toString();
     try {
       cacheFunctions.getUsers().forEach((user) => {
         if (
-          parseDN(strDn).equals(parseDN(user.dn)) ||
-          (!req.checkAll && req.filter.matches(user.attributes))
+          parseDN(strDn).equals(parseDN(user.dn))
+          || (!req.checkAll && req.filter.matches(user.attributes))
         ) {
-          log.debugSite(sitename, 'MatchUser: ' + user.dn);
+          log.debugSite(sitename, `MatchUser: ${user.dn}`);
           res.send(user);
         }
       });
@@ -87,14 +87,14 @@ initSite = (site, cacheFunctions, ldapjs) => {
   }
 
   function sendGroups(req, res, next) {
-    var strDn = req.dn.toString();
+    const strDn = req.dn.toString();
     try {
       cacheFunctions.getGroups().forEach((group) => {
         if (
-          parseDN(strDn).equals(parseDN(group.dn)) ||
-          (!req.checkAll && req.filter.matches(group.attributes))
+          parseDN(strDn).equals(parseDN(group.dn))
+          || (!req.checkAll && req.filter.matches(group.attributes))
         ) {
-          log.debugSite(sitename, 'MatchGroup: ' + group.dn);
+          log.debugSite(sitename, `MatchGroup: ${group.dn}`);
           res.send(group);
         }
       });
@@ -105,15 +105,12 @@ initSite = (site, cacheFunctions, ldapjs) => {
   }
 
   function sendOrga(req, res, next) {
-    var strDn = req.dn.toString();
+    const strDn = req.dn.toString();
     try {
       const glob = cacheFunctions.getGlobals();
-      if (req.checkAll && parseDN(strDn).equals(parseDN(glob.rootDn.dn)))
-        res.send(glob.rootDn);
-      if (req.checkAll && parseDN(strDn).equals(parseDN(glob.groupRoot.dn)))
-        res.send(glob.groupRoot);
-      if (req.checkAll && parseDN(strDn).equals(parseDN(glob.userRoot.dn)))
-        res.send(glob.userRoot);
+      if (req.checkAll && parseDN(strDn).equals(parseDN(glob.rootDn.dn))) res.send(glob.rootDn);
+      if (req.checkAll && parseDN(strDn).equals(parseDN(glob.groupRoot.dn))) res.send(glob.groupRoot);
+      if (req.checkAll && parseDN(strDn).equals(parseDN(glob.userRoot.dn))) res.send(glob.userRoot);
     } catch (error) {
       log.errorSite(sitename, 'Error while retrieving groups: ', error);
     }
@@ -127,80 +124,78 @@ initSite = (site, cacheFunctions, ldapjs) => {
 
   async function authenticate(req, _res, next) {
     try {
-      var valid = await cacheFunctions.checkAuthentication(
+      const valid = await cacheFunctions.checkAuthentication(
         req.dn.toString(),
-        req.credentials
+        req.credentials,
       );
       if (valid) {
         log.infoSite(
-            sitename,
-            'Authentication successful for ' + req.dn.toString()
-          );
+          sitename,
+          `Authentication successful for ${req.dn.toString()}`,
+        );
         return next();
       }
     } catch (err) {
-      log.debug(err)
+      log.debug(err);
     }
     log.infoSite(
       sitename,
-      'Authentication error ' + req.dn.toString()
+      `Authentication error ${req.dn.toString()}`,
     );
-return next(new ldap.InvalidCredentialsError());
+    return next(new ldap.InvalidCredentialsError());
   }
 
   log.debugSite(sitename, 'Resgistering routes');
   // Login bind for user
   ldapjs.bind(
-    'ou=' + c.LDAP_OU_USERS + ',' + dc,
+    `ou=${c.LDAP_OU_USERS},${dc}`,
     (req, res, next) => {
-      log.debugSite(sitename, 'BIND dn: ' + req.dn.toString());
+      log.debugSite(sitename, `BIND dn: ${req.dn.toString()}`);
       next();
     },
     authenticate,
-    endSuccess
+    endSuccess,
   );
 
   ldapjs.bind(
-    //"cn=admin,dc=ccfreiburg,dc=de",
+    // "cn=admin,dc=ccfreiburg,dc=de",
     cacheFunctions.getGlobals().adminDn.dn,
     (req, res, next) => {
-      log.debugSite(sitename, 'BIND dn: ' + req.dn);
+      log.debugSite(sitename, `BIND dn: ${req.dn}`);
       next();
     },
     authenticate,
-    endSuccess
+    endSuccess,
   );
 
   // Search implementation for user search
   ldapjs.search(
-    'ou=' + c.LDAP_OU_USERS + ',' + dc,
+    `ou=${c.LDAP_OU_USERS},${dc}`,
     searchLogging,
     authorize,
-    function (req, _res, next) {
+    (req, _res, next) => {
       log.debugSite(sitename, 'Search for users');
-      req.checkAll =
-        (req.scope !== 'base' && req.scope !== 'sub') ||
-        req.dn.rdns.length > parseDN(dc).rdns.length + 1;
+      req.checkAll = (req.scope !== 'base' && req.scope !== 'sub')
+        || req.dn.rdns.length > parseDN(dc).rdns.length + 1;
       return next();
     },
     sendUsers,
-    endSuccess
+    endSuccess,
   );
 
   // Search implementation for group search
   ldapjs.search(
-    'ou=' + c.LDAP_OU_GROUPS + ',' + dc,
+    `ou=${c.LDAP_OU_GROUPS},${dc}`,
     searchLogging,
     authorize,
-    function (req, _res, next) {
+    (req, _res, next) => {
       log.debugSite(sitename, 'Search for groups');
-      req.checkAll =
-        (req.scope !== 'base' && req.scope !== 'sub') ||
-        req.dn.rdns.length > parseDN(dc).rdns.length + 1;
+      req.checkAll = (req.scope !== 'base' && req.scope !== 'sub')
+        || req.dn.rdns.length > parseDN(dc).rdns.length + 1;
       return next();
     },
     sendGroups,
-    endSuccess
+    endSuccess,
   );
 
   // Search implementation for user and group search
@@ -208,7 +203,7 @@ return next(new ldap.InvalidCredentialsError());
     dc,
     searchLogging,
     authorize,
-    function (req, _res, next) {
+    (req, _res, next) => {
       log.debugSite(sitename, 'Search for users and groups combined');
       req.checkAll = req.scope !== 'base' && req.scope !== 'sub';
       return next();
@@ -216,39 +211,39 @@ return next(new ldap.InvalidCredentialsError());
     sendUsers,
     sendGroups,
     sendOrga,
-    endSuccess
+    endSuccess,
   );
 
   // Search the schema from LDAP Root DSE
   ldapjs.search(
     'cn=schema',
-    function (req, res) {
+    (req, res) => {
       log.debug('Get subschema information');
       console.log(JSON.stringify(req));
       res.send(cacheFunctions.getGlobals().schemaDn);
       res.end();
     },
-    endSuccess
+    endSuccess,
   );
 
   // Search implementation for basic search for Directory Information Tree and the LDAP Root DSE
   ldapjs.search(
     '',
-    function (req, res) {
+    (req, res) => {
       log.debug('empty request, return directory information');
       res.send(cacheFunctions.getGlobals().rootDn);
       res.end();
     },
-    endSuccess
+    endSuccess,
   );
 
   // throw exception during search
   ldapjs.search(
     'cn=eroor,ou=error,dc=error,o=error',
-    function (req, res) {
+    (req, res) => {
       throw new Error('for testing');
     },
-    endSuccess
+    endSuccess,
   );
 
   log.debugSite(sitename, 'Routes registered');
