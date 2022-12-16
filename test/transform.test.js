@@ -9,11 +9,11 @@ DataFormatError = transform.DataFormatError;
 
 
 describe("Transorm API results to Ldap", () => {
-  it("trsansformGroup from empty json object throws exception", () => {
-    expect(() => transform.trsansformGroup({}, {}, "")).to.throw(DataFormatError);
+  it("transformGroup from empty json object throws exception", () => {
+    expect(() => transform.transformGroup({}, {}, "")).to.throw(DataFormatError);
   });
-  it("trsansformGroup json object does contain data", () => {
-    actual = transform.trsansformGroup(
+  it("transformGroup json object does contain data", () => {
+    actual = transform.transformGroup(
       {
         id: 2,
         guid: 'FC8ED-B948-46AA-A48C-2CFD7DED910C',
