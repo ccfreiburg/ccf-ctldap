@@ -36,9 +36,9 @@ const updateSiteData = (
   site,
   getChurchToolsDataFunc,
   siteCacheFunctionsSetData,
-) => new Promise(async (resolve) => {
+) => new Promise((resolve) => {
   log.infoSite(site.site, 'Updating data from Church Tools');
-  const data = await getChurchToolsDataFunc(
+  const data = getChurchToolsDataFunc(
     site.selectionGroupIds,
     site.tranformedGroups,
     site.site,
@@ -51,7 +51,7 @@ const updateSiteData = (
 
 exports.getConfig = (file) => YAML.load(file);
 
-exports.ldapjs = {};
+exports.ldap = {};
 
 exports.start = async (
   config,
@@ -61,9 +61,9 @@ exports.start = async (
 ) => {
   log.info('Starting up CCF Ldap wrapper for ChurchTools ....');
   const updaters = new Map();
-  this.ldapjs = ldapserver.getLdapServer(config.server);
+  this.ldap = ldapserver.getLdapServer(config.server);
 
-  for (const [key, value] of Object.entries(config.sites)) {
+  for (const [, value] of Object.entries(config.sites)) {
     const site = value;
     log.debugSite(site.site, 'Get and transform data from ChurchTools');
     const cacheFunctions = await initCache(
@@ -71,20 +71,20 @@ exports.start = async (
       getChurchToolsDataFunc,
       authWithChurchToolsFunc(site),
     );
-    await this.ldapjs.initSite(site, cacheFunctions);
+    await this.ldap.initSite(site, cacheFunctions);
     updaters.set(
       site.site.name,
       () => updateSiteData(site, getChurchToolsDataFunc, cacheFunctions.setData),
     );
   }
   log.debug('Done initializing data');
-  this.ldapjs.startUp(callback);
+  this.ldap.startUp(callback);
   return {
     updaters,
-    stop: () => this.ldapjs.stopServer(),
+    stop: () => this.ldap.stopServer(),
     restart: (cb) => {
-      this.ldapjs.stopServer();
-      this.ldapjs.startUp(cb);
+      this.ldap.stopServer();
+      this.ldap.startUp(cb);
     },
   };
 };
