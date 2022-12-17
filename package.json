@@ -6,7 +6,7 @@
   "scripts": {
     "test": "mocha ./test/*.test.js",
     "integration": "mocha ./test/*.integration.js",
-    "lint": "npx eslint src/* test/* index.js"
+    "lint": "npx eslint src/* index.js"
   },
   "author": "Alex Röhm",
   "license": "GPL-3.0-or-later",

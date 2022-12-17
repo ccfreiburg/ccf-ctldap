@@ -1,4 +1,5 @@
 const c = require('./constants');
+const log = require('./logging');
 
 exports.getNextcloudMappingTables = (churchToolsData, dc) => {
   let insertSql = `REPLACE INTO \`oc_ldap_group_mapping\` VALUES ('cn=admin,ou=groups,${
@@ -16,8 +17,12 @@ exports.getNextcloudMappingTables = (churchToolsData, dc) => {
   });
   insertSql = `${insertSql.slice(0, -1)};`;
 
-  // INSERT INTO `oc_ldap_group_mapping` (`ldap_dn`, `owncloud_name`, `directory_uuid`) VALUES ('cn=admin,ou=groups,dc=ccfreiburg,dc=de', 'admin', 'admingruop0');
-  console.log(insertSql);
+  /*
+   * INSERT INTO `oc_ldap_group_mapping`
+   * (`ldap_dn`, `owncloud_name`, `directory_uuid`)
+   * VALUES ('cn=admin,ou=groups,dc=ccfreiburg,dc=de', 'admin', 'admingruop0');
+   */
+  log.info(insertSql);
 };
 
 exports.getNextcloudLdapConfig = (config, ncAccessObjClass, externalLdapIp) => {
@@ -27,14 +32,15 @@ exports.getNextcloudLdapConfig = (config, ncAccessObjClass, externalLdapIp) => {
   const Orga = site.ldap.dc;
   const Group = `ou=${c.LDAP_OU_GROUPS},`;
   const Users = `ou=${c.LDAP_OU_USERS},`;
-  const ncOC = (ncAccessObjClass && ncAccessObjClass.length > 1 ? ncAccessObjClass : c.LDAP_OBJCLASS_USER);
+  const ncOC = (ncAccessObjClass && ncAccessObjClass.length > 1
+    ? ncAccessObjClass : c.LDAP_OBJCLASS_USER);
 
   const set = 's01';
   function getLdapAppSetting(key, val) {
     return `('user_ldap', '${set}${key}', '${val}'),`;
   }
 
-  settingSql = `REPLACE INTO \`oc_appconfig\` VALUES ${
+  const settingSql = `REPLACE INTO \`oc_appconfig\` VALUES ${
     getLdapAppSetting(
       'ldap_dn',
       `cn=${site.ldap.admincn},${Orga}`,
@@ -103,5 +109,5 @@ exports.getNextcloudLdapConfig = (config, ncAccessObjClass, externalLdapIp) => {
     + `('user_ldap',  '${set}ldap_turn_on_pwd_change', '0'),('user_ldap',  '${set}ldap_user_avatar_rule', 'default'),`
     + `('user_ldap',  '${set}ldap_user_display_name_2', ''),('user_ldap',  '${set}ldap_userfilter_groups', '');`;
 
-  console.log(settingSql);
+  log.info(settingSql);
 };

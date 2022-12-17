@@ -1,7 +1,6 @@
 const ldapEsc = require('ldap-escape');
 const crypto = require('crypto');
 const c = require('./constants');
-const { result } = require('./ctapi');
 
 class DataFormatError extends Error {
   constructor(message) {
@@ -32,7 +31,6 @@ exports.uniqueEmails = (users) => {
 };
 
 exports.getRootObj = (dc, admin, o) => {
-  const dn = dc;
   // ldapEsc.dn`cn=root`;
   const result = {
     users: {
@@ -110,19 +108,22 @@ exports.getAdminGroup = (cn, dc) => {
 };
 
 exports.setUid = (ctpserson) => {
-  if (ctpserson[c.LDAPID_FIELD] && ctpserson[c.LDAPID_FIELD].length > 0) return ctpserson[c.LDAPID_FIELD];
+  if (ctpserson[c.LDAPID_FIELD] && ctpserson[c.LDAPID_FIELD].length > 0) {
+    return ctpserson[c.LDAPID_FIELD];
+  }
   return this.stringConvLowercaseUmlaut(
     `${ctpserson.firstName}.${ctpserson.lastName}`,
   );
 };
 
 exports.addConfigAttributes = (ctperson, attributes) => {
+  const p = ctperson;
   attributes.forEach((attribute) => {
-    ctperson.attributes[attribute.name] = attribute.default;
+    p.attributes[attribute.name] = attribute.default;
     const replacment = attribute.replacements.find(
-      (rep) => rep.id == ctperson.attributes.id,
+      (rep) => rep.id === p.attributes.id,
     );
-    if (replacment) ctperson.attributes[attribute.name] = replacment.value;
+    if (replacment) p.attributes[attribute.name] = replacment.value;
   });
 };
 
@@ -198,15 +199,17 @@ exports.connectUsersAndGroups = (
 ) => {
   groups.forEach((group) => {
     const objClassGrpMem = tranformedGroups.find(
-      (t) => t.gid == group.attributes.id,
+      (t) => t.gid === group.attributes.id,
     );
     memberships
-      .filter((m) => m.groupId == group.attributes.id)
+      .filter((m) => m.groupId === group.attributes.id)
       .forEach((memberhip) => {
-        const user = users.find((u) => u.attributes.id == memberhip.personId);
+        const user = users.find((u) => u.attributes.id === memberhip.personId);
         if (user) {
           user.attributes.memberOf.push(group.dn);
-          if (objClassGrpMem && objClassGrpMem.hasOwnProperty('objectClass')) user.attributes.objectClass.push(objClassGrpMem.objectClass);
+          if (objClassGrpMem && Object.prototype.hasOwnProperty.call(objClassGrpMem, 'objectClass')) {
+            user.attributes.objectClass.push(objClassGrpMem.objectClass);
+          }
           group.attributes.uniqueMember.push(user.dn);
         }
       });
@@ -216,7 +219,7 @@ exports.connectUsersAndGroups = (
 exports.getLdapGroupsWithoutMembers = (ctgroups, tranformedGroups, dc) => {
   const groups = [];
   ctgroups.forEach((element) => {
-    grptransform = tranformedGroups.find((t) => t.gid == element.id);
+    const grptransform = tranformedGroups.find((t) => t.gid === element.id);
     const grp = this.transformGroup(element, grptransform, dc);
     groups.push(grp);
   });
@@ -250,7 +253,15 @@ exports.getLdapData = (site, churchtoolsdata, adminuser) => {
     site.tranformedGroups,
   );
 
-  groups.push(this.addUsersAdminGroup(users, adminuser, site.adminGroup.members, site.adminGroup.cn, site.ldap.dc));
+  groups.push(
+    this.addUsersAdminGroup(
+      users,
+      adminuser,
+      site.adminGroup.members,
+      site.adminGroup.cn,
+      site.ldap.dc,
+    ),
+  );
 
   return {
     users,

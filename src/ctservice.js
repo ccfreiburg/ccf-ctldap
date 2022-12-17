@@ -1,9 +1,8 @@
 const log = require('./logging');
 const c = require('./constants');
-const t = require('./transform');
 const ctconn = require('./ctconnection');
 
-getGroupsPromiseReal = async (groupIds, ap, site) => {
+const getGroupsPromiseReal = async (groupIds, ap, site) => {
   let url = site.url + c.API_SLUG + ap;
   let first = !url.includes('?');
   groupIds.forEach((id) => {
@@ -12,10 +11,13 @@ getGroupsPromiseReal = async (groupIds, ap, site) => {
       first = false;
     } else url = url + c.IDS + id;
   });
-  return await ctconn.get(url, site);
+  return ctconn.get(url, site);
 };
 let getGroupsPromise = getGroupsPromiseReal;
-exports.mockGetGroups = (mock) => getGroupsPromise = mock;
+
+exports.mockGetGroups = (mock) => {
+  getGroupsPromise = mock;
+};
 
 exports.getPersonsInGroups = async (groupIds, site) => {
   const result = await getGroupsPromise(groupIds, c.GROUPMEMBERS_AP, site);
@@ -51,7 +53,7 @@ exports.getGroups = async (groupIds, site) => {
   return groups;
 };
 
-getPersonRecord = (data) => {
+const getPersonRecord = (data) => {
   const person = {
     id: data.id,
     guid: data.guid,
@@ -66,7 +68,9 @@ getPersonRecord = (data) => {
     cmsuserid: (data.cmsUserId ? data.cmsUserId : ''),
     email: data.email,
   };
-  if (data[c.LDAPID_FIELD] && data[c.LDAPID_FIELD].length > 0) person[c.LDAPID_FIELD] = data[c.LDAPID_FIELD];
+  if (data[c.LDAPID_FIELD] && data[c.LDAPID_FIELD].length > 0) {
+    person[c.LDAPID_FIELD] = data[c.LDAPID_FIELD];
+  }
   return person;
 };
 
@@ -81,10 +85,10 @@ exports.getPersonsForIds = async (ids, site) => {
   const clonedIds = [...ids];
   const chunkedIds = [];
   const chunkSize = clonedIds.length / 10;
-  for (let i = 0; i < chunkSize; i++) {
+  for (let i = 0; i < chunkSize; i += 1) {
     chunkedIds.push(clonedIds.splice(0, 10));
   }
-  for await (idarray of chunkedIds) {
+  for await (const idarray of chunkedIds) {
     const result = await getGroupsPromise(idarray, c.PERSONS_AP, site);
     result.data.forEach((person) => {
       persons.push(getPersonRecord(person));
@@ -93,7 +97,9 @@ exports.getPersonsForIds = async (ids, site) => {
   return persons;
 };
 
-exports.authWithChurchTools = (site) => (user, password) => ctconn.authenticate(site.site.url, user, password);
+exports.authWithChurchTools = (site) => (user, password) => {
+  ctconn.authenticate(site.site.url, user, password);
+};
 
 exports.getChurchToolsData = async (selectionGroupIds, tranformedGroups, site) => {
   const allGoupsIds = selectionGroupIds.map((id) => id);

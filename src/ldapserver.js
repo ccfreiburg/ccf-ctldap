@@ -6,42 +6,18 @@ const log = require('./logging');
 
 log.loglevel = log.loglevels.debug;
 
-const normalize = (astring) => {
-  const str = astring;
-  return str.replaceAll(', ', ',');
-};
-stopServer = () => {
+let ldapjs = {};
+
+const stopServer = () => {
   ldapjs.close();
 };
 
-startUp = (server, ldapjs, cb) => {
-  const port = parseInt(server.port);
+const startUp = (server, cb) => {
+  const port = parseInt(server.port, 10);
   ldapjs.listen(port, server.ip, cb(server.ip, port));
 };
 
-exports.getLdapServer = (server) => {
-  if (server.cert && server.key) {
-    const ldapCert = fs.readFileSync(server.cert, { encoding: 'utf8' });
-    const ldapKey = fs.readFileSync(server.key, { encoding: 'utf8' });
-    ldapjs = ldap.createServer({
-      log: log.logger,
-      certificate: ldapCert,
-      key: ldapKey,
-    });
-    log.info('LDAP Server started with ssl');
-  } else {
-    ldapjs = ldap.createServer({ log: log.logger });
-    log.info('LDAP Server started without security (no ssl)');
-  }
-  return {
-    initSite: (site, cacheFunctions) => initSite(site, cacheFunctions, ldapjs),
-    startUp: (cb) => startUp(server, ldapjs, cb),
-    getConnections: (cb) => ldapjs.getConnections(cb),
-    stopServer: () => stopServer(),
-  };
-};
-
-initSite = (site, cacheFunctions, ldapjs) => {
+const initSite = (site, cacheFunctions) => {
   const sitename = site.site.name;
   const { dc } = site.ldap;
 
@@ -108,9 +84,15 @@ initSite = (site, cacheFunctions, ldapjs) => {
     const strDn = req.dn.toString();
     try {
       const glob = cacheFunctions.getGlobals();
-      if (req.checkAll && parseDN(strDn).equals(parseDN(glob.rootDn.dn))) res.send(glob.rootDn);
-      if (req.checkAll && parseDN(strDn).equals(parseDN(glob.groupRoot.dn))) res.send(glob.groupRoot);
-      if (req.checkAll && parseDN(strDn).equals(parseDN(glob.userRoot.dn))) res.send(glob.userRoot);
+      if (req.checkAll && parseDN(strDn).equals(parseDN(glob.rootDn.dn))) {
+        res.send(glob.rootDn);
+      }
+      if (req.checkAll && parseDN(strDn).equals(parseDN(glob.groupRoot.dn))) {
+        res.send(glob.groupRoot);
+      }
+      if (req.checkAll && parseDN(strDn).equals(parseDN(glob.userRoot.dn))) {
+        res.send(glob.userRoot);
+      }
     } catch (error) {
       log.errorSite(sitename, 'Error while retrieving groups: ', error);
     }
@@ -219,7 +201,7 @@ initSite = (site, cacheFunctions, ldapjs) => {
     'cn=schema',
     (req, res) => {
       log.debug('Get subschema information');
-      console.log(JSON.stringify(req));
+      log.debug(JSON.stringify(req));
       res.send(cacheFunctions.getGlobals().schemaDn);
       res.end();
     },
@@ -240,11 +222,33 @@ initSite = (site, cacheFunctions, ldapjs) => {
   // throw exception during search
   ldapjs.search(
     'cn=eroor,ou=error,dc=error,o=error',
-    (req, res) => {
+    () => {
       throw new Error('for testing');
     },
     endSuccess,
   );
 
   log.debugSite(sitename, 'Routes registered');
+};
+
+exports.getLdapServer = (server) => {
+  if (server.cert && server.key) {
+    const ldapCert = fs.readFileSync(server.cert, { encoding: 'utf8' });
+    const ldapKey = fs.readFileSync(server.key, { encoding: 'utf8' });
+    ldapjs = ldap.createServer({
+      log: log.logger,
+      certificate: ldapCert,
+      key: ldapKey,
+    });
+    log.info('LDAP Server started with ssl');
+  } else {
+    ldapjs = ldap.createServer({ log: log.logger });
+    log.info('LDAP Server started without security (no ssl)');
+  }
+  return {
+    initSite: (site, cacheFunctions) => initSite(site, cacheFunctions),
+    startUp: (cb) => startUp(server, cb),
+    getConnections: (cb) => ldapjs.getConnections(cb),
+    stopServer: () => stopServer(),
+  };
 };
