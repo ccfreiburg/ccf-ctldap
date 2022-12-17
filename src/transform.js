@@ -195,10 +195,10 @@ exports.connectUsersAndGroups = (
   memberships,
   groups,
   users,
-  transformedGroups,
+  transformGroups,
 ) => {
   groups.forEach((group) => {
-    const objClassGrpMem = transformedGroups.find(
+    const objClassGrpMem = transformGroups.find(
       (t) => t.gid === group.attributes.id,
     );
     memberships
@@ -216,10 +216,10 @@ exports.connectUsersAndGroups = (
   });
 };
 
-exports.getLdapGroupsWithoutMembers = (ctgroups, transformedGroups, dc) => {
+exports.getLdapGroupsWithoutMembers = (ctgroups, transformGroups, dc) => {
   const groups = [];
   ctgroups.forEach((element) => {
-    const grptransform = transformedGroups.find((t) => t.gid === element.id);
+    const grptransform = transformGroups.find((t) => t.gid === element.id);
     const grp = this.transformGroup(element, grptransform, dc);
     groups.push(grp);
   });
@@ -238,7 +238,7 @@ exports.getLdapUsers = (ctpersons, attributes, dc) => {
 exports.getLdapData = (site, churchtoolsdata, adminuser) => {
   const groups = this.getLdapGroupsWithoutMembers(
     churchtoolsdata.groups,
-    site.transformedGroups,
+    site.transformGroups,
     site.ldap.dc,
   );
   const users = this.getLdapUsers(
@@ -250,7 +250,7 @@ exports.getLdapData = (site, churchtoolsdata, adminuser) => {
     churchtoolsdata.memberships,
     groups,
     users,
-    site.transformedGroups,
+    site.transformGroups,
   );
 
   groups.push(
