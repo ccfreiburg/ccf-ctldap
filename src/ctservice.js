@@ -102,19 +102,19 @@ exports.authWithChurchTools = (site) => (user, password) => {
 };
 
 exports.getChurchToolsData = async (selectionGroupIds, transformGroups, site) => {
-  const allGoupsIds = selectionGroupIds.map((id) => id);
+  const allGroupsIds = selectionGroupIds.map((id) => id);
   transformGroups.forEach((element) => {
-    if (!allGoupsIds.includes(element.gid)) allGoupsIds.push(element.gid);
+    if (!allGroupsIds.includes(element.gid)) allGroupsIds.push(element.gid);
   });
 
   log.info('Get Persons from ChurchTools');
   const ctPersonIds = await this.getPersonsInGroups(selectionGroupIds, site);
   log.info('Get Groups from ChurchTools');
-  const ctGroups = await this.getGroups(allGoupsIds, site);
+  const ctGroups = await this.getGroups(allGroupsIds, site);
   log.info('Get Person Details from ChurchTools');
   const ctPersons = await this.getPersonsForIds(ctPersonIds, site);
   log.info('Get Group Memberships from ChurchTools');
-  const ctGroupMembership = await this.getGroupMemberships(allGoupsIds, site);
+  const ctGroupMembership = await this.getGroupMemberships(allGroupsIds, site);
 
   return {
     groups: ctGroups,
