@@ -31,7 +31,7 @@ sites:
     selectionGroupIds: # ChurchTools group IDs - only members of these groups will be served by LDAP
       - gid 
       - gid
-    tranformedGroups: # ChurchTools group IDs with the group name which will be served by LDAP
+    transformedGroups: # ChurchTools group IDs with the group name which will be served by LDAP
       - gid: gid
         name: Groupname
         objectClass: usrObjClass # additionally set objectClass of user to that value if in group

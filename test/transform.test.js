@@ -8,7 +8,7 @@ const transform = require('../src/transform.js');
 
 DataFormatError = transform.DataFormatError;
 
-describe('Transorm API results to Ldap', () => {
+describe('Transform API results to Ldap', () => {
   it('transformGroup from empty json object throws exception', () => {
     expect(() => transform.transformGroup({}, {}, '')).to.throw(DataFormatError);
   });

@@ -19,7 +19,7 @@ const initCache = async (site, getChurchToolsDataFunc, authChurchToolsFunc) => {
   );
   const churchtoolsdata = await getChurchToolsDataFunc(
     site.selectionGroupIds,
-    site.tranformedGroups,
+    site.transformedGroups,
     site.site,
   );
   const { users, groups } = transform.getLdapData(
@@ -40,7 +40,7 @@ const updateSiteData = (
   log.infoSite(site.site, 'Updating data from Church Tools');
   const data = getChurchToolsDataFunc(
     site.selectionGroupIds,
-    site.tranformedGroups,
+    site.transformedGroups,
     site.site,
   );
   const adminuser = transform.getAdmin(site.ldap.admincn, site.ldap.dc);
@@ -98,7 +98,7 @@ exports.update = async (updaters) => {
 exports.snapshot = async (site) => {
   const data = await ctservice.getChurchToolsData(
     site.selectionGroupIds,
-    site.tranformedGroups,
+    site.transformedGroups,
     site.site,
   );
   const adminuser = transform.getAdmin(site.ldap.admincn, site.ldap.dc);

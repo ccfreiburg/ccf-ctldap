@@ -8,7 +8,7 @@ const ctdata = require('../production/ctdata.json');
 const site = require('../production/config.json');
 const ldap = require('../production/ldap.json');
 
-describe('Transorm Production data to Ldap', () => {
+describe('Transform Production data to Ldap', () => {
   it('Equals Snapshot', () => {
     const ldapconf = site.sites.ccf.ldap;
     const adminuser = transform.getAdmin(ldapconf.admincn, ldapconf.dc);
