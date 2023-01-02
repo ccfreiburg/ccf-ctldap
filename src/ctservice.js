@@ -99,9 +99,9 @@ exports.getPersonsForIds = async (ids, site) => {
   return persons;
 };
 
-exports.authWithChurchTools = (site) => (user, password) => {
-  ctconn.authenticate(site.site.url, user, password);
-};
+exports.authWithChurchTools = (site) => (user, password) => (
+  ctconn.authenticate(site.site.url, user, password)
+);
 
 exports.getChurchToolsData = async (selectionGroupIds, transformGroups, site) => {
   let allGroupsIds = [];
