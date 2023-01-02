@@ -118,6 +118,9 @@ exports.setUid = (ctpserson) => {
 
 exports.addConfigAttributes = (ctperson, attributes) => {
   const p = ctperson;
+
+  if (!attributes) return;
+
   attributes.forEach((attribute) => {
     p.attributes[attribute.name] = attribute.default;
     const replacment = attribute.replacements.find(
