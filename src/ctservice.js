@@ -37,6 +37,7 @@ exports.getGroupMemberships = async (groupIds, site) => {
     members.push({
       personId: el.personId,
       groupId: el.groupId,
+      groupTypeRoleId: el.groupTypeRoleId,
     });
   });
   return members;
@@ -50,6 +51,7 @@ exports.getGroups = async (groupIds, site) => {
       id: el.id,
       guid: el.guid,
       name: el.name,
+      roles: el.roles,
     });
   });
   return groups;

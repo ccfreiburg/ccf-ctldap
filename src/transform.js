@@ -181,14 +181,36 @@ exports.transformGroup = (ctgroup, grtransform, dc) => {
   };
 };
 
+exports.transformRole = (grp, ctrole, dc) => {
+  if (!grp || !grp.attributes.id) throw new DataFormatError('Group from CT was emtpy');
+  if (!ctrole || !ctrole.id) throw new DataFormatError('Role from CT was emtpy');
+  const cn = `${grp.attributes.displayname} ${ctrole.name}`;
+  const dn = `${ldapEsc.dn`cn=${cn}`},ou=${c.LDAP_OU_GROUPS},${dc}`;
+  return {
+    dn: this.lowercase(dn),
+    attributes: {
+      cn,
+      displayname: cn,
+      baseGroupId: grp.attributes.id,
+      groupTypeRoleId: ctrole.groupTypeRoleId,
+      id: ctrole.id,
+      nsuniqueid: `r${ctrole.id}`,
+      objectClass: [c.LDAP_OBJCLASS_GROUP],
+      uniqueMember: [],
+    },
+  };
+};
+
 exports.addUsersAdminGroup = (users, ldapadmin, ids, cn, dc) => {
   const admingroup = this.getAdminGroup(cn, dc);
-  users.forEach((user) => {
-    if (ids.includes(user.attributes.id)) {
-      admingroup.attributes.uniqueMember.push(user.dn);
-      user.attributes.memberOf.push(admingroup.dn);
-    }
-  });
+  if (ids) {
+    users.forEach((user) => {
+      if (ids.includes(user.attributes.id)) {
+        admingroup.attributes.uniqueMember.push(user.dn);
+        user.attributes.memberOf.push(admingroup.dn);
+      }
+    });
+  }
   admingroup.attributes.uniqueMember.push(ldapadmin.dn);
   ldapadmin.attributes.memberOf.push(admingroup.dn);
   return admingroup;
@@ -210,21 +232,27 @@ exports.connectUsersAndGroups = (
     }
 
     memberships
-      .filter((m) => m.groupId === group.attributes.id)
-      .forEach((memberhip) => {
-        const user = users.find((u) => u.attributes.id === memberhip.personId);
-        if (user) {
-          user.attributes.memberOf.push(group.dn);
-          if (objClassGrpMem && Object.prototype.hasOwnProperty.call(objClassGrpMem, 'objectClass')) {
-            user.attributes.objectClass.push(objClassGrpMem.objectClass);
-          }
-          group.attributes.uniqueMember.push(user.dn);
+      .filter(
+        (m) => (m.groupId === group.attributes.id
+               || (group.attributes.groupTypeRoleId
+               && (m.groupTypeRoleId === group.attributes.groupTypeRoleId))),
+      )
+      .forEach((membership) => {
+        const user = users.find((u) => u.attributes.id === membership.personId);
+        if (!user) return;
+        if (group.attributes.baseGroupId
+            && group.attributes.baseGroupId !== membership.groupId) return;
+
+        user.attributes.memberOf.push(group.dn);
+        if (objClassGrpMem && Object.prototype.hasOwnProperty.call(objClassGrpMem, 'objectClass')) {
+          user.attributes.objectClass.push(objClassGrpMem.objectClass);
         }
+        group.attributes.uniqueMember.push(user.dn);
       });
   });
 };
 
-exports.getLdapGroupsWithoutMembers = (ctgroups, transformGroups, dc) => {
+exports.getLdapGroupsWithoutMembers = (ctgroups, transformGroups, roles, dc) => {
   const groups = [];
   ctgroups.forEach((element) => {
     let grptransform = null;
@@ -235,6 +263,14 @@ exports.getLdapGroupsWithoutMembers = (ctgroups, transformGroups, dc) => {
 
     const grp = this.transformGroup(element, grptransform, dc);
     groups.push(grp);
+
+    if (roles && roles.export && element.roles) {
+      element.roles.forEach((role) => {
+        if (roles.filter.includes(role.name) || !role.isActive) return;
+        const rolegrp = this.transformRole(grp, role, dc);
+        groups.push(rolegrp);
+      });
+    }
   });
   return groups;
 };
@@ -252,6 +288,7 @@ exports.getLdapData = (site, churchtoolsdata, adminuser) => {
   const groups = this.getLdapGroupsWithoutMembers(
     churchtoolsdata.groups,
     site.transformGroups,
+    site.roles,
     site.ldap.dc,
   );
   const users = this.getLdapUsers(
