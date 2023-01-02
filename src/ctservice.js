@@ -5,12 +5,14 @@ const ctconn = require('./ctconnection');
 const getGroupsPromiseReal = async (groupIds, ap, site) => {
   let url = site.url + c.API_SLUG + ap;
   let first = !url.includes('?');
-  groupIds.forEach((id) => {
-    if (first) {
-      url = `${url}?${c.IDS.substring(1)}${id}`;
-      first = false;
-    } else url = url + c.IDS + id;
-  });
+  if (groupIds) {
+    groupIds.forEach((id) => {
+      if (first) {
+        url = `${url}?${c.IDS.substring(1)}${id}`;
+        first = false;
+      } else url = url + c.IDS + id;
+    });
+  }
   return ctconn.get(url, site);
 };
 let getGroupsPromise = getGroupsPromiseReal;
@@ -102,11 +104,17 @@ exports.authWithChurchTools = (site) => (user, password) => {
 };
 
 exports.getChurchToolsData = async (selectionGroupIds, transformGroups, site) => {
-  const allGroupsIds = selectionGroupIds.map((id) => id);
+  let allGroupsIds = [];
+
+  if (selectionGroupIds) {
+    allGroupsIds = selectionGroupIds.map((id) => id);
+  }
 
   if (transformGroups) {
     transformGroups.forEach((element) => {
-      if (!allGroupsIds.includes(element.gid)) allGroupsIds.push(element.gid);
+      if (!allGroupsIds.includes(element.gid)) {
+        allGroupsIds.push(element.gid);
+      }
     });
   }
 
