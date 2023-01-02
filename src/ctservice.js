@@ -103,9 +103,12 @@ exports.authWithChurchTools = (site) => (user, password) => {
 
 exports.getChurchToolsData = async (selectionGroupIds, transformGroups, site) => {
   const allGroupsIds = selectionGroupIds.map((id) => id);
-  transformGroups.forEach((element) => {
-    if (!allGroupsIds.includes(element.gid)) allGroupsIds.push(element.gid);
-  });
+
+  if (transformGroups) {
+    transformGroups.forEach((element) => {
+      if (!allGroupsIds.includes(element.gid)) allGroupsIds.push(element.gid);
+    });
+  }
 
   log.info('Get Persons from ChurchTools');
   const ctPersonIds = await this.getPersonsInGroups(selectionGroupIds, site);

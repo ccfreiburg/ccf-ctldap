@@ -198,9 +198,14 @@ exports.connectUsersAndGroups = (
   transformGroups,
 ) => {
   groups.forEach((group) => {
-    const objClassGrpMem = transformGroups.find(
-      (t) => t.gid === group.attributes.id,
-    );
+    let objClassGrpMem = null;
+
+    if (transformGroups) {
+      objClassGrpMem = transformGroups.find(
+        (t) => t.gid === group.attributes.id,
+      );
+    }
+
     memberships
       .filter((m) => m.groupId === group.attributes.id)
       .forEach((memberhip) => {
@@ -219,7 +224,12 @@ exports.connectUsersAndGroups = (
 exports.getLdapGroupsWithoutMembers = (ctgroups, transformGroups, dc) => {
   const groups = [];
   ctgroups.forEach((element) => {
-    const grptransform = transformGroups.find((t) => t.gid === element.id);
+    let grptransform = null;
+
+    if (transformGroups) {
+      grptransform = transformGroups.find((t) => t.gid === element.id);
+    }
+
     const grp = this.transformGroup(element, grptransform, dc);
     groups.push(grp);
   });
