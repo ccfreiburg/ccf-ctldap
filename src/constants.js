@@ -8,7 +8,7 @@ exports.GROUPMEMBERS_AP = '/groups/members?with_deleted=false';
 exports.IDS = '&ids[]=';
 exports.PERSONS_AP = '/persons';
 exports.GROUPS_AP = '/groups';
-exports.LDAPID_FIELD = 'ncuid';
+exports.LDAPID_FIELD = 'cmsuserid';
 exports.LDAP_OU_USERS = 'users';
 exports.LDAP_OU_GROUPS = 'groups';
 exports.LDAP_OBJCLASS_USER = 'CTPerson';
