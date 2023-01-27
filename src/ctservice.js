@@ -2,15 +2,16 @@ const log = require('./logging');
 const c = require('./constants');
 const ctconn = require('./ctconnection');
 
-const getGroupsPromiseReal = async (groupIds, ap, site) => {
-  let url = site.url + c.API_SLUG + ap;
-  let first = !url.includes('?');
+const getGroupsPromiseReal = async (groupIds, ap, site, params, page) => {
+  let url = `${site.url}${c.API_SLUG}${ap}?page=${page}&limit=100`;
+  if (params) {
+    params.forEach((param) => {
+      url = `${url}&${param.key}=${param.value}`;
+    });
+  }
   if (groupIds) {
     groupIds.forEach((id) => {
-      if (first) {
-        url = `${url}?${c.IDS.substring(1)}${id}`;
-        first = false;
-      } else url = url + c.IDS + id;
+      url = url + c.IDS + id;
     });
   }
   return ctconn.get(url, site);
@@ -21,19 +22,43 @@ exports.mockGetGroups = (mock) => {
   getGroupsPromise = mock;
 };
 
+const getGroupsPaginated = async (groupIds, ap, params, site) => {
+  let data = [];
+  let page = 1;
+  let result = await getGroupsPromise(groupIds, ap, site, params, page);
+  data = data.concat(result.data);
+  if (!result.meta.pagination) return data;
+  while (result.meta.pagination.current < result.meta.pagination.lastPage) {
+    page += 1;
+    result = await getGroupsPromise(groupIds, ap, site, params, page);
+    data = data.concat(result.data);
+  }
+  return data;
+};
+
 exports.getPersonsInGroups = async (groupIds, site) => {
-  const result = await getGroupsPromise(groupIds, c.GROUPMEMBERS_AP, site);
+  const result = await getGroupsPaginated(
+    groupIds,
+    c.GROUPMEMBERS_AP,
+    [{ key: 'with_deleted', value: 'false' }],
+    site,
+  );
   const personIds = [];
-  result.data.forEach((el) => {
+  result.forEach((el) => {
     if (!personIds.includes(el.personId)) personIds.push(el.personId);
   });
   return personIds;
 };
 
 exports.getGroupMemberships = async (groupIds, site) => {
-  const result = await getGroupsPromise(groupIds, c.GROUPMEMBERS_AP, site);
+  const result = await getGroupsPaginated(
+    groupIds,
+    c.GROUPMEMBERS_AP,
+    [{ key: 'with_deleted', value: 'false' }],
+    site,
+  );
   const members = [];
-  result.data.forEach((el) => {
+  result.forEach((el) => {
     members.push({
       personId: el.personId,
       groupId: el.groupId,
@@ -44,9 +69,9 @@ exports.getGroupMemberships = async (groupIds, site) => {
 };
 
 exports.getGroups = async (groupIds, site) => {
-  const result = await getGroupsPromise(groupIds, c.GROUPS_AP, site);
+  const result = await getGroupsPaginated(groupIds, c.GROUPS_AP, [], site);
   const groups = [];
-  result.data.forEach((el) => {
+  result.forEach((el) => {
     groups.push({
       id: el.id,
       guid: el.guid,
@@ -93,8 +118,8 @@ exports.getPersonsForIds = async (ids, site) => {
     chunkedIds.push(clonedIds.splice(0, 10));
   }
   for await (const idarray of chunkedIds) {
-    const result = await getGroupsPromise(idarray, c.PERSONS_AP, site);
-    result.data.forEach((person) => {
+    const result = await getGroupsPaginated(idarray, c.PERSONS_AP, [], site);
+    result.forEach((person) => {
       persons.push(getPersonRecord(person));
     });
   }

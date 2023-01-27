@@ -4,7 +4,7 @@ exports.WHOAMI_AP = '/whoami?only_allow_authenticated=true';
 exports.CSRF_AP = '/csrftoken';
 exports.LOGIN_AP = '/login';
 exports.INFO_AP = '/info';
-exports.GROUPMEMBERS_AP = '/groups/members?with_deleted=false';
+exports.GROUPMEMBERS_AP = '/groups/members';
 exports.IDS = '&ids[]=';
 exports.PERSONS_AP = '/persons';
 exports.GROUPS_AP = '/groups';
