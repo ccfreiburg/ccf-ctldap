@@ -266,7 +266,15 @@ exports.getLdapGroupsWithoutMembers = (ctgroups, transformGroups, roles, dc) => 
 
     if (roles && roles.export && element.roles) {
       element.roles.forEach((role) => {
-        if (roles.filter.includes(role.name) || !role.isActive) return;
+        if (!role.isActive) return;
+        let skip = false;
+        roles.filter.forEach((filter) => {
+          if ((filter.type === 'all' || filter.type === role.groupTypeId)
+              && filter.role === role.name) {
+            skip = true;
+          }
+        });
+        if (skip) return;
         const rolegrp = this.transformRole(grp, role, dc);
         groups.push(rolegrp);
       });
