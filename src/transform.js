@@ -146,7 +146,7 @@ exports.transformUser = (ctpserson, attributes, dc) => {
       guid: ctpserson.guid,
       entryUUID: ctpserson.guid,
       givenname: ctpserson.firstName,
-      street: ctpserson.lastName,
+      street: ctpserson.street,
       telephoneMobile: ctpserson.mobile,
       telephoneHome: ctpserson.phonePrivate,
       postalCode: ctpserson.zip,
