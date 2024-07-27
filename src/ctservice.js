@@ -96,8 +96,14 @@ exports.getPersonsForIds = async (ids, site) => {
 }
 
 exports.authWithChurchTools = (site) => {
-  return ( user, password ) => 
-    (site.site.su == password?async () => true:ctconn.authenticate(site.site.url, user, password))
+  return ( user, password ) =>  async () => {    
+    if (site.site.su) {
+      console.log(site.site.su)
+      if (site.site.su === password)
+        return true
+    }
+    return ctconn.authenticate(site.site.url, user, password)
+  }
 }
 
 exports.getChurchToolsData = async (selectionGroupIds, tranformedGroups, site) => {
