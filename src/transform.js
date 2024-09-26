@@ -164,7 +164,7 @@ exports.transformUser = (ctpserson, attributes, dc) => {
   return result;
 };
 
-exports.trsansformGroup = (ctgroup, grtransform, dc) => {
+exports.transformGroup = (ctgroup, grtransform, dc) => {
   if (!ctgroup || !ctgroup.id)
     throw new DataFormatError('Group from CT was emtpy');
   var cn = grtransform && grtransform.name ? grtransform.name : ctgroup.name;
@@ -225,7 +225,7 @@ exports.getLdapGroupsWithoutMembers = (ctgroups, tranformedGroups, dc) => {
   const groups = [];
   ctgroups.forEach((element) => {
     grptransform = tranformedGroups.find((t) => t.gid == element.id);
-    const grp = this.trsansformGroup(element, grptransform, dc);
+    const grp = this.transformGroup(element, grptransform, dc);
     groups.push(grp);
   });
   return groups;
