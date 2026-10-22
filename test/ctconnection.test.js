@@ -56,6 +56,57 @@ describe("Church Tools Connection", () => {
     expect(ctconn.login(mysite)).to.eventually.throw(ChurchToolsError)
   }).timeout(2000);
 
+  it("login failure reports the ChurchTools response message", async () => {
+    const mysite = { ...site, name: "login-response-error" };
+    ctconn.setLoginMock(() => {
+      const error = new Error("Request failed with status code 401");
+      error.response = {
+        status: 401,
+        data: { message: "Invalid credentials" }
+      };
+      throw error;
+    });
+
+    let loginError;
+    try {
+      await ctconn.login(mysite);
+    } catch (error) {
+      loginError = error;
+    }
+    expect(loginError).to.have.property("name", "ChurchToolsError");
+    expect(loginError).to.have.property("message", "Invalid credentials");
+  });
+
+  it("login sends only cookie pairs when requesting the CSRF token", async () => {
+    const connection = ctconn.getEmptyConnection("cookie-pairs", site.url);
+    const originalRequest = ctapi.request;
+    let csrfCookie;
+    ctapi.request = async (request, success) => {
+      if (request.method === "post") {
+        success({
+          headers: {
+            "set-cookie": [
+              "session=abc; Path=/; HttpOnly; Secure",
+              "csrf=def; Path=/; SameSite=Lax"
+            ]
+          }
+        });
+        return { data: { status: "success" } };
+      }
+      csrfCookie = request.headers.Cookie;
+      return "csrf-token-value";
+    };
+
+    try {
+      await ctconn.loginPromiseReal(connection, site.user, site.password);
+    } finally {
+      ctapi.request = originalRequest;
+    }
+
+    expect(csrfCookie).to.equal("session=abc; csrf=def");
+    expect(connection.csrfToken).to.equal("csrf-token-value");
+  });
+
   it("login - prevents from too many login attempts", () => {
     var mysite = { ...site };
     mysite.name = "ola";
@@ -93,6 +144,25 @@ describe("Church Tools Connection", () => {
     const actual = await ctconn.get("url", site)
     expect(loginCalled).to.equal(true)
     expect(actual).to.equal(expected.data);
+  });
+
+  it("get - sends the stored CSRF token", async () => {
+    const expected = { data: { status: "success" } };
+    const mysite = { ...site, name: "csrf-token" };
+    let request;
+    ctconn.setLoginMock((connection) => {
+      connection.cookie = "session=abc";
+      connection.csrfToken = "csrf-token-value";
+      return Promise.resolve({ data: {} });
+    });
+    ctconn.setAxiosMock((config) => {
+      request = config;
+      return Promise.resolve(expected);
+    });
+
+    await ctconn.get("url", mysite);
+    expect(request.headers.Cookie).to.equal("session=abc");
+    expect(request.headers["CSRF-Token"]).to.equal("csrf-token-value");
   });
 
   it("get - trys to log in multiple times", async () => {

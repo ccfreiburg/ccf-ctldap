@@ -84,7 +84,13 @@ exports.getCsrfTokenReal = async (baseurl, cookie) => {
 };
 
 getCookie = (result) => {
-  return result.headers["set-cookie"][0];
+  const setCookies = result.headers["set-cookie"];
+  if (!Array.isArray(setCookies) || setCookies.length === 0) {
+    throw ctapi.ChurchToolsError("ChurchTools login response did not include a session cookie");
+  }
+  return setCookies
+    .map((cookie) => cookie.split(";", 1)[0])
+    .join("; ");
 };
 
 getLoginRequest = (baseurl, user, password) => {
@@ -138,7 +144,7 @@ exports.getPromiseReal = async (url, site) => {
         url: url,
         headers: {
           'Cookie': conn.cookie,
-          'CSRF-Token': (conn.csrftoken ? conn.csrftoken : "")
+          'CSRF-Token': (conn.csrfToken ? conn.csrfToken : "")
         },
         json: true,
       }
