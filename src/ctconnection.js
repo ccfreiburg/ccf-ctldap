@@ -53,7 +53,7 @@ exports.login = async (site) => {
     conn.loginPromise = loginPromise(conn, site.user, site.password)
     result = await conn.loginPromise;
   } catch (err) {
-    result = err.response
+    result = err.response || { message: err.message || "Login request failed" };
   }
   conn.loginPromise = null;
 

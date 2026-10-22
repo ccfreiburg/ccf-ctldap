@@ -77,6 +77,23 @@ describe("Church Tools Connection", () => {
     expect(loginError).to.have.property("message", "Invalid credentials");
   });
 
+  it("login failure without an HTTP response preserves the error message", async () => {
+    const mysite = { ...site, name: "login-no-response" };
+    ctconn.setLoginMock(() => {
+      throw new Error("Request failed with status code 401");
+    });
+
+    let loginError;
+    try {
+      await ctconn.login(mysite);
+    } catch (error) {
+      loginError = error;
+    }
+    expect(loginError).to.have.property("name", "ChurchToolsError");
+    expect(loginError).to.have.property("message", "Request failed with status code 401");
+    expect(ctconn.getConnection(mysite).loginErrorCount).to.equal(1);
+  });
+
   it("login sends only cookie pairs when requesting the CSRF token", async () => {
     const connection = ctconn.getEmptyConnection("cookie-pairs", site.url);
     const originalRequest = ctapi.request;
